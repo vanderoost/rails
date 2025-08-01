@@ -2,6 +2,7 @@ import SparkMD5 from "spark-md5"
 
 const fileSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice
 
+
 export class FileChecksum {
   static create(file, callback) {
     const instance = new FileChecksum(file)
@@ -9,13 +10,16 @@ export class FileChecksum {
   }
 
   constructor(file) {
+    const MB = 1024 * 1024
+
     this.file = file
-    this.chunkSize = 2097152 // 2MB
+    this.chunkSize = 2 * MB
     this.chunkCount = Math.ceil(this.file.size / this.chunkSize)
     this.chunkIndex = 0
   }
 
   create(callback) {
+    this.debugStartTime = performance.now()
     this.callback = callback
     this.md5Buffer = new SparkMD5.ArrayBuffer
     this.fileReader = new FileReader
@@ -30,6 +34,8 @@ export class FileChecksum {
     if (!this.readNextChunk()) {
       const binaryDigest = this.md5Buffer.end(true)
       const base64digest = btoa(binaryDigest)
+      const runTime = (performance.now() - this.debugStartTime) / 1000
+      console.debug(`Calculated checksum in ${runTime.toFixed(1)}s`)
       this.callback(null, base64digest)
     }
   }

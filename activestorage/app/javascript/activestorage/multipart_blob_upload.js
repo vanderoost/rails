@@ -59,11 +59,9 @@ export class MultipartBlobUpload {
     const xhr = new XMLHttpRequest()
     xhr.open("PUT", url, true)
     xhr.responseType = "text"
-
     xhr.addEventListener("load", () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        const etag = xhr.getResponseHeader("ETag")
-        callback(null, etag)
+        callback(null, xhr.getResponseHeader("ETag"))
       } else {
         callback(new Error(`Failed to upload part: ${xhr.status}`))
       }
@@ -93,8 +91,10 @@ export class MultipartBlobUpload {
     })
 
     xhr.send(JSON.stringify({
-      upload_id: this.uploadId,
-      parts: this.uploadedParts
+      blob: {
+        upload_id: this.uploadId,
+        parts: this.uploadedParts
+      }
     }))
   }
 

@@ -420,12 +420,14 @@ class FileChecksum {
     instance.create(callback);
   }
   constructor(file) {
+    const MB = 1024 * 1024;
     this.file = file;
-    this.chunkSize = 2097152;
+    this.chunkSize = 2 * MB;
     this.chunkCount = Math.ceil(this.file.size / this.chunkSize);
     this.chunkIndex = 0;
   }
   create(callback) {
+    this.debugStartTime = performance.now();
     this.callback = callback;
     this.md5Buffer = new SparkMD5.ArrayBuffer;
     this.fileReader = new FileReader;
@@ -438,6 +440,8 @@ class FileChecksum {
     if (!this.readNextChunk()) {
       const binaryDigest = this.md5Buffer.end(true);
       const base64digest = btoa(binaryDigest);
+      const runTime = (performance.now() - this.debugStartTime) / 1e3;
+      console.debug(`Calculated checksum in ${runTime.toFixed(1)}s`);
       this.callback(null, base64digest);
     }
   }
@@ -656,8 +660,7 @@ class MultipartBlobUpload {
     xhr.responseType = "text";
     xhr.addEventListener("load", (() => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        const etag = xhr.getResponseHeader("ETag");
-        callback(null, etag);
+        callback(null, xhr.getResponseHeader("ETag"));
       } else {
         callback(new Error(`Failed to upload part: ${xhr.status}`));
       }
@@ -681,8 +684,10 @@ class MultipartBlobUpload {
       }
     }));
     xhr.send(JSON.stringify({
-      upload_id: this.uploadId,
-      parts: this.uploadedParts
+      blob: {
+        upload_id: this.uploadId,
+        parts: this.uploadedParts
+      }
     }));
   }
   getCSRFToken() {
