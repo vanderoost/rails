@@ -91,6 +91,43 @@ module ActiveStorage
       end
     end
 
+    def initiate_multipart_for_direct_upload(key)
+      instrument :initiate_multipart, key: key do |payload|
+        response = client.client.create_multipart_upload(
+          bucket: bucket.name,
+          key: key,
+          **upload_options
+        )
+        upload_id = response.upload_id
+        payload[:upload_id] = upload_id
+        upload_id
+      end
+    end
+
+    def part_url_for_direct_upload(key, upload_id:, part_number:, expires_in:)
+      instrument :url, key: key do |payload|
+        generated_url = object_for(key).presigned_url :upload_part,
+          expires_in: expires_in.to_i,
+          upload_id: upload_id,
+          part_number: part_number,
+          **upload_options
+
+        payload[:url] = generated_url
+        generated_url
+      end
+    end
+
+    def complete_multipart_for_direct_upload(key, upload_id:, parts:)
+      instrument :complete_multipart, key: key do
+        client.client.complete_multipart_upload(
+          bucket: bucket.name,
+          key: key,
+          upload_id: upload_id,
+          multipart_upload: { parts: parts }
+        )
+      end
+    end
+
     def headers_for_direct_upload(key, content_type:, checksum:, filename: nil, disposition: nil, custom_metadata: {}, **)
       content_disposition = content_disposition_with(type: disposition, filename: filename) if filename
 
