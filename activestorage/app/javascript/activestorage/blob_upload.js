@@ -1,9 +1,8 @@
 export class BlobUpload {
-  constructor(blob) {
-    this.blob = blob
-    this.file = blob.file
+  constructor(blobRecord) {
+    this.file = blobRecord.file
 
-    const { url, headers } = blob.directUploadData
+    const { url, headers } = blobRecord.directUploadData
 
     this.xhr = new XMLHttpRequest
     this.xhr.open("PUT", url, true)
@@ -16,6 +15,7 @@ export class BlobUpload {
   }
 
   create(callback) {
+    console.debug("BlobUpload#create (uploading to S3)")
     this.callback = callback
     this.xhr.send(this.file.slice())
   }
@@ -30,6 +30,7 @@ export class BlobUpload {
   }
 
   requestDidError(event) {
+    console.error("BlobUpload#requestDidError", event)
     this.callback(`Error storing "${this.file.name}". Status: ${this.xhr.status}`)
   }
 }

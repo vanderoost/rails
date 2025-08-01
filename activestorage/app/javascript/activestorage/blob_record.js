@@ -45,6 +45,7 @@ export class BlobRecord {
   }
 
   create(callback) {
+    console.debug("BlobRecord#create (sending to the server)")
     this.callback = callback
     this.xhr.send(JSON.stringify({ blob: this.attributes }))
   }
@@ -52,6 +53,7 @@ export class BlobRecord {
   requestDidLoad(event) {
     if (this.status >= 200 && this.status < 300) {
       const { response } = this
+      console.debug("BlobRecord response:", response)
       const { direct_upload } = response
       delete response.direct_upload
       this.attributes = response
