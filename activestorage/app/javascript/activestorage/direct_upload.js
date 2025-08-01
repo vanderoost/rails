@@ -1,6 +1,7 @@
 import { FileChecksum } from "./file_checksum"
 import { BlobRecord } from "./blob_record"
 import { BlobUpload } from "./blob_upload"
+import { MultipartBlobUpload } from "./multipart_blob_upload"
 
 let id = 0
 
@@ -23,22 +24,40 @@ export class DirectUpload {
         return
       }
 
-      const blob = new BlobRecord(this.file, checksum, this.url, this.customHeaders)
-      notify(this.delegate, "directUploadWillCreateBlobWithXHR", blob.xhr)
+      const blobRecord = new BlobRecord(this.file, checksum, this.url, this.customHeaders)
+      notify(this.delegate, "directUploadWillCreateBlobWithXHR", blobRecord.xhr)
 
-      blob.create(error => {
+      console.debug("blob before create:", blobRecord.toJSON())
+      blobRecord.create(error => { // This sends a request to the server
         if (error) {
           callback(error)
         } else {
-          const upload = new BlobUpload(blob)
-          notify(this.delegate, "directUploadWillStoreFileWithXHR", upload.xhr)
-          upload.create(error => {
-            if (error) {
-              callback(error)
-            } else {
-              callback(null, blob.toJSON())
-            }
-          })
+          console.debug("blob after create:", blobRecord.toJSON())
+          const { directUploadData } = blobRecord
+
+          if (directUploadData.upload_id) {
+            // Multipart upload
+            const multipartUpload = new MultipartBlobUpload(blobRecord)
+            notify(this.delegate, "directUploadWillStoreFileWithXHR", multipartUpload.xhr)
+            multipartUpload.create(error => {
+              if (error) {
+                callback(error)
+              } else {
+                callback(null, blobRecord.toJSON())
+              }
+            })
+          } else {
+            // Regular upload
+            const blobUpload = new BlobUpload(blobRecord)
+            notify(this.delegate, "directUploadWillStoreFileWithXHR", blobUpload.xhr)
+            blobUpload.create(error => {
+              if (error) {
+                callback(error)
+              } else {
+                callback(null, blobRecord.toJSON())
+              }
+            })
+          }
         }
       })
     }, options)

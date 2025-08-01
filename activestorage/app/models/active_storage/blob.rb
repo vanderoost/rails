@@ -233,6 +233,17 @@ class ActiveStorage::Blob < ActiveStorage::Record
     service.headers_for_direct_upload key, filename: filename, content_type: content_type, content_length: byte_size, checksum: checksum, custom_metadata: custom_metadata
   end
 
+  def service_initiate_multipart_upload
+    service.initiate_multipart_for_direct_upload(key)
+  end
+
+  def service_part_url_for_direct_upload(upload_id:, part_number:, expires_in: ActiveStorage.service_urls_expire_in)
+    service.part_url_for_direct_upload(key, upload_id: upload_id, part_number: part_number, expires_in: expires_in)
+  end
+
+  def service_complete_multipart_for_direct_upload(upload_id:, parts:)
+    service.complete_multipart_for_direct_upload(key, upload_id: upload_id, parts: parts)
+  end
 
   # Uploads the +io+ to the service on the +key+ for this blob. Blobs are intended to be immutable, so you shouldn't be
   # using this method after a file has already been uploaded to fit with a blob. If you want to create a derivative blob,
