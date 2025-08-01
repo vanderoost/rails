@@ -13,6 +13,7 @@ export class DirectUploadsController {
     const controllers = this.createDirectUploadControllers()
 
     const startNextController = () => {
+      console.debug("DirectUploadsController#startNextController")
       const controller = controllers.shift()
       if (controller) {
         controller.start(error => {
@@ -37,8 +38,7 @@ export class DirectUploadsController {
     const controllers = []
     this.inputs.forEach(input => {
       toArray(input.files).forEach(file => {
-        const controller = new DirectUploadController(input, file)
-        controllers.push(controller)
+        controllers.push(new DirectUploadController(input, file))
       })
     })
     return controllers
