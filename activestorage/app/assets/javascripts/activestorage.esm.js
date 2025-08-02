@@ -699,52 +699,88 @@ class MultipartBlobUpload {
 let id = 0;
 
 class DirectUpload {
-  constructor(file, url, delegate, customHeaders = {}) {
+  constructor(file, url, delegate, customHeaders = {}, useMultipart = false) {
     this.id = ++id;
     this.file = file;
     this.url = url;
     this.delegate = delegate;
     this.customHeaders = customHeaders;
+    this.useMultipart = useMultipart;
+    console.debug("Using Multipart:", this.useMultipart);
   }
   create(callback) {
-    FileChecksum.create(this.file, ((error, checksum) => {
-      if (error) {
-        callback(error);
-        return;
-      }
-      const blobRecord = new BlobRecord(this.file, checksum, this.url, this.customHeaders);
+    if (this.useMultipart) {
+      const blobRecord = new BlobRecord(this.file, null, this.url, this.customHeaders);
       notify(this.delegate, "directUploadWillCreateBlobWithXHR", blobRecord.xhr);
-      console.debug("blob before create:", blobRecord.toJSON());
       blobRecord.create((error => {
         if (error) {
           callback(error);
         } else {
-          console.debug("blob after create:", blobRecord.toJSON());
-          const {directUploadData: directUploadData} = blobRecord;
-          if (directUploadData.upload_id) {
-            const multipartUpload = new MultipartBlobUpload(blobRecord);
-            notify(this.delegate, "directUploadWillStoreFileWithXHR", multipartUpload.xhr);
-            multipartUpload.create((error => {
-              if (error) {
-                callback(error);
-              } else {
-                callback(null, blobRecord.toJSON());
-              }
-            }));
-          } else {
-            const blobUpload = new BlobUpload(blobRecord);
-            notify(this.delegate, "directUploadWillStoreFileWithXHR", blobUpload.xhr);
-            blobUpload.create((error => {
-              if (error) {
-                callback(error);
-              } else {
-                callback(null, blobRecord.toJSON());
-              }
-            }));
-          }
+          this.handleBlobUpload(blobRecord, callback);
         }
       }));
-    }));
+    } else {
+      FileChecksum.create(this.file, ((error, checksum) => {
+        if (error) {
+          callback(error);
+          return;
+        }
+        const blobRecord = new BlobRecord(this.file, checksum, this.url, this.customHeaders);
+        notify(this.delegate, "directUploadWillCreateBlobWithXHR", blobRecord.xhr);
+        blobRecord.create((error => {
+          if (error) {
+            callback(error);
+          } else {
+            const {directUploadData: directUploadData} = blobRecord;
+            if (directUploadData.upload_id) {
+              const multipartUpload = new MultipartBlobUpload(blobRecord);
+              notify(this.delegate, "directUploadWillStoreFileWithXHR", multipartUpload.xhr);
+              multipartUpload.create((error => {
+                if (error) {
+                  callback(error);
+                } else {
+                  callback(null, blobRecord.toJSON());
+                }
+              }));
+            } else {
+              const blobUpload = new BlobUpload(blobRecord);
+              notify(this.delegate, "directUploadWillStoreFileWithXHR", blobUpload.xhr);
+              blobUpload.create((error => {
+                if (error) {
+                  callback(error);
+                } else {
+                  callback(null, blobRecord.toJSON());
+                }
+              }));
+            }
+          }
+        }));
+      }));
+    }
+  }
+  handleBlobUpload(blobRecord, callback) {
+    const {directUploadData: directUploadData} = blobRecord;
+    if (directUploadData.upload_id) {
+      const multipartUpload = new MultipartBlobUpload(blobRecord);
+      notify(this.delegate, "directUploadWillStoreFileWithXHR", multipartUpload.xhr);
+      multipartUpload.create((error => {
+        if (error) {
+          callback(error);
+        } else {
+          callback(null, blobRecord.toJSON());
+        }
+      }));
+    } else {
+      const blobUpload = new BlobUpload(blobRecord);
+      notify(this.delegate, "directUploadWillStoreFileWithXHR", blobUpload.xhr);
+      blobUpload.create((error => {
+        if (error) {
+          callback(error);
+        } else {
+          callback(null, blobRecord.toJSON());
+        }
+      }));
+    }
   }
 }
 
@@ -758,7 +794,8 @@ class DirectUploadController {
   constructor(input, file) {
     this.input = input;
     this.file = file;
-    this.directUpload = new DirectUpload(this.file, this.url, this);
+    this.useMultipart = this.input.dataset.multipartUpload === "true";
+    this.directUpload = new DirectUpload(this.file, this.url, this, {}, this.useMultipart);
     this.dispatch("initialize");
   }
   start(callback) {
@@ -863,7 +900,6 @@ class DirectUploadsController {
   start(callback) {
     const controllers = this.createDirectUploadControllers();
     const startNextController = () => {
-      console.debug("DirectUploadsController#startNextController");
       const controller = controllers.shift();
       if (controller) {
         controller.start((error => {
