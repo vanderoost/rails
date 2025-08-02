@@ -1068,7 +1068,7 @@ class BlobUpload {
 }
 
 class MultipartBlobUpload {
-  constructor(blobRecord) {
+  constructor(blobRecord, delegate) {
     this.file = blobRecord.file;
     this.blobId = blobRecord.attributes.id;
     const {upload_id: upload_id, part_size: part_size, part_urls: part_urls} = blobRecord.directUploadData;
@@ -1078,6 +1078,8 @@ class MultipartBlobUpload {
     this.uploadedParts = [];
     this.maxConcurrentUploads = 4;
     this.retryableRequest = new RetryableRequest;
+    this.partProgress = new Array(part_urls.length).fill(0);
+    this.delegate = delegate;
     this.xhr = new XMLHttpRequest;
   }
   create(callback) {
@@ -1136,16 +1138,23 @@ class MultipartBlobUpload {
           console.debug(`Part ${partData.part_number}/${this.partUrls.length} uploaded`);
           resolve(etag);
         }
-      }));
+      }), partData.part_number);
     }));
   }
-  uploadPart(url, chunk, callback) {
+  uploadPart(url, chunk, callback, partNumber) {
     this.retryableRequest.execute(((onSuccess, onError) => {
       const xhr = new XMLHttpRequest;
       xhr.open("PUT", url, true);
       xhr.responseType = "text";
+      xhr.upload.addEventListener("progress", (event => {
+        if (event.lengthComputable) {
+          const partProgress = event.loaded;
+          this.updatePartProgress(partNumber - 1, partProgress);
+        }
+      }));
       xhr.addEventListener("load", (() => {
         if (xhr.status >= 200 && xhr.status < 300) {
+          this.updatePartProgress(partNumber - 1, chunk.size);
           onSuccess(xhr.getResponseHeader("ETag"));
         } else {
           onError({
@@ -1164,6 +1173,16 @@ class MultipartBlobUpload {
       }));
       xhr.send(chunk);
     })).then((etag => callback(null, etag))).catch((error => callback(new Error(error.message))));
+  }
+  updatePartProgress(partIndex, progress) {
+    this.partProgress[partIndex] = progress;
+    const totalBytesUploaded = this.partProgress.reduce(((sum, p) => sum + p), 0);
+    if (this.delegate && typeof this.delegate.directUploadDidProgress === "function") {
+      this.delegate.directUploadDidProgress({
+        loaded: totalBytesUploaded,
+        total: this.file.size
+      });
+    }
   }
   completeMultipartUpload() {
     this.uploadedParts.sort(((a, b) => a.part_number - b.part_number));
@@ -1271,7 +1290,7 @@ class DirectUpload {
   }
   uploadToService(blobRecord, callback) {
     const UploadClass = this.useMultipart ? MultipartBlobUpload : BlobUpload;
-    const upload = new UploadClass(blobRecord);
+    const upload = this.useMultipart ? new UploadClass(blobRecord, this.delegate) : new UploadClass(blobRecord);
     notify(this.delegate, "directUploadWillStoreFileWithXHR", upload.xhr);
     upload.create((error => {
       if (error) {
@@ -1387,6 +1406,10 @@ class DirectUploadController {
     } else {
       return 3e3 + fileSize / MB * 50;
     }
+  }
+  directUploadDidProgress(event) {
+    console.debug("directUploadDidProgress called with:", event);
+    this.uploadRequestDidProgress(event);
   }
 }
 
