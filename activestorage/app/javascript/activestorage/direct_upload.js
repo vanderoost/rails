@@ -45,7 +45,7 @@ export class DirectUpload {
 
   uploadToService(blobRecord, callback) {
     const UploadClass = this.useMultipart ? MultipartBlobUpload : BlobUpload
-    const upload = this.useMultipart ? new UploadClass(blobRecord, this.delegate) : new UploadClass(blobRecord)
+    const upload = new UploadClass(blobRecord)
 
     notify(this.delegate, "directUploadWillStoreFileWithXHR", upload.xhr)
     upload.create(error => {

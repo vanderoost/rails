@@ -68,9 +68,7 @@ export class DirectUploadController {
     xhr.upload.addEventListener("progress", event => this.uploadRequestDidProgress(event))
 
     // Start simulating progress after upload completes
-    xhr.upload.addEventListener("loadend", () => {
-      this.simulateResponseProgress(xhr)
-    })
+    xhr.upload.addEventListener("loadend", () => this.simulateResponseProgress(xhr))
   }
 
   simulateResponseProgress(xhr) {
@@ -116,7 +114,6 @@ export class DirectUploadController {
 
   // Multipart upload progress delegate method
   directUploadDidProgress(event) {
-    console.debug("directUploadDidProgress called with:", event)
     this.uploadRequestDidProgress(event)
   }
 }
