@@ -41,9 +41,10 @@ class ActiveStorage::DirectUploadsController < ActiveStorage::BaseController
 
     def multipart_direct_upload_json(blob)
       upload_id = blob.service_initiate_multipart_upload
-      part_count = (Math.sqrt(blob.byte_size / 1.megabyte) / 3).ceil
+      part_count = [(Math.sqrt(blob.byte_size / 1.megabyte) / 3).ceil, 1].max
+      logger.debug "Multipart with #{part_count} parts"
       part_size = blob.byte_size.fdiv(part_count).ceil
-      logger.debug "Multipart with #{part_count} parts of size #{part_size}"
+      logger.debug "Parts of size #{part_size}"
 
       part_urls = (1..part_count).map do |part_number|
         {
