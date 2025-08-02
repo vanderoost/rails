@@ -7,7 +7,7 @@ export class DirectUploadsController {
   constructor(form) {
     this.form = form
     this.inputs = findElements(form, inputSelector).filter(input => input.files.length)
-    this.maxConcurrentUploads = 3 // Upload up to 3 files concurrently
+    this.maxConcurrentUploads = 3
   }
 
   start(callback) {
@@ -20,13 +20,12 @@ export class DirectUploadsController {
       return
     }
 
-    // Upload files concurrently
     this.uploadControllersConcurrently(controllers, callback)
   }
 
   uploadControllersConcurrently(controllers, callback) {
     console.debug("DirectUploadsController#startNextController")
-    
+
     this.uploadControllersWithConcurrencyLimit(controllers, this.maxConcurrentUploads)
       .then(() => {
         callback()
@@ -54,7 +53,7 @@ export class DirectUploadsController {
 
         const controller = controllers[controllerIndex++]
         const uploadPromise = this.uploadControllerAsync(controller)
-        
+
         results.push(uploadPromise)
         executing.push(uploadPromise)
 
@@ -69,7 +68,6 @@ export class DirectUploadsController {
           })
       }
 
-      // Start up to 'limit' concurrent uploads
       for (let i = 0; i < Math.min(limit, controllers.length); i++) {
         startNextUpload()
       }
