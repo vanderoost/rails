@@ -112,4 +112,10 @@ export class DirectUploadController {
       return 3000 + (fileSize / MB * 50) // 3+ seconds for larger files
     }
   }
+
+  // Multipart upload progress delegate method
+  directUploadDidProgress(event) {
+    console.debug("directUploadDidProgress called with:", event)
+    this.uploadRequestDidProgress(event)
+  }
 }
