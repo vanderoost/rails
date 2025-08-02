@@ -612,7 +612,7 @@ class BlobUpload {
 }
 
 class MultipartBlobUpload {
-  constructor(blobRecord, delegate) {
+  constructor(blobRecord) {
     this.file = blobRecord.file;
     this.blobId = blobRecord.attributes.id;
     const {upload_id: upload_id, part_size: part_size, part_urls: part_urls} = blobRecord.directUploadData;
@@ -621,9 +621,9 @@ class MultipartBlobUpload {
     this.partUrls = part_urls;
     this.uploadedParts = [];
     this.maxConcurrentUploads = 4;
+    this.progressThrottleMs = 100;
     this.retryableRequest = new RetryableRequest;
     this.partProgress = new Array(part_urls.length).fill(0);
-    this.delegate = delegate;
     this.xhr = new XMLHttpRequest;
   }
   create(callback) {
@@ -720,13 +720,22 @@ class MultipartBlobUpload {
   }
   updatePartProgress(partIndex, progress) {
     this.partProgress[partIndex] = progress;
-    const totalBytesUploaded = this.partProgress.reduce(((sum, p) => sum + p), 0);
-    if (this.delegate && typeof this.delegate.directUploadDidProgress === "function") {
-      this.delegate.directUploadDidProgress({
-        loaded: totalBytesUploaded,
-        total: this.file.size
-      });
+    if (this.emitProgressTimeoutId) {
+      return;
     }
+    this.emitProgressTimeoutId = setTimeout((() => {
+      this.emitProgressEvent();
+    }), this.progressThrottleMs);
+  }
+  emitProgressEvent() {
+    this.emitProgressTimeoutId = null;
+    const totalBytesUploaded = this.partProgress.reduce(((sum, p) => sum + p), 0);
+    const progressEvent = new ProgressEvent("progress", {
+      lengthComputable: true,
+      loaded: totalBytesUploaded,
+      total: this.file.size
+    });
+    this.xhr.upload.dispatchEvent(progressEvent);
   }
   completeMultipartUpload() {
     this.uploadedParts.sort(((a, b) => a.part_number - b.part_number));
@@ -780,7 +789,7 @@ class RetryableRequest {
       const onError = error => {
         if (attempt < this.maxRetries && this.shouldRetry(error)) {
           const delay = Math.round(this.baseDelay * Math.pow(2, attempt) + Math.random() * 1e3);
-          console.debug(`${error.context || "Request"} failed, retrying in ${delay}ms (attempt ${attempt + 1}/${this.maxRetries}): ${error.message}`);
+          console.error(`${error.context || "Request"} failed, retrying in ${delay}ms (attempt ${attempt + 1}/${this.maxRetries}): ${error.message}`);
           setTimeout((() => {
             this.execute(requestFn, attempt + 1).then(resolve, reject);
           }), delay);
@@ -830,7 +839,7 @@ class DirectUpload {
   }
   uploadToService(blobRecord, callback) {
     const UploadClass = this.useMultipart ? MultipartBlobUpload : BlobUpload;
-    const upload = this.useMultipart ? new UploadClass(blobRecord, this.delegate) : new UploadClass(blobRecord);
+    const upload = new UploadClass(blobRecord);
     notify(this.delegate, "directUploadWillStoreFileWithXHR", upload.xhr);
     upload.create((error => {
       if (error) {
@@ -909,9 +918,7 @@ class DirectUploadController {
       xhr: xhr
     });
     xhr.upload.addEventListener("progress", (event => this.uploadRequestDidProgress(event)));
-    xhr.upload.addEventListener("loadend", (() => {
-      this.simulateResponseProgress(xhr);
-    }));
+    xhr.upload.addEventListener("loadend", (() => this.simulateResponseProgress(xhr)));
   }
   simulateResponseProgress(xhr) {
     let progress = 90;
@@ -947,7 +954,6 @@ class DirectUploadController {
     }
   }
   directUploadDidProgress(event) {
-    console.debug("directUploadDidProgress called with:", event);
     this.uploadRequestDidProgress(event);
   }
 }

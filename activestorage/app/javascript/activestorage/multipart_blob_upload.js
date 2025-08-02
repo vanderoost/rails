@@ -1,8 +1,7 @@
 export class MultipartBlobUpload {
-  constructor(blobRecord, delegate) {
+  constructor(blobRecord) {
     this.file = blobRecord.file
     this.blobId = blobRecord.attributes.id
-
     const { upload_id, part_size, part_urls } = blobRecord.directUploadData
 
     this.uploadId = upload_id
@@ -10,13 +9,9 @@ export class MultipartBlobUpload {
     this.partUrls = part_urls
     this.uploadedParts = []
     this.maxConcurrentUploads = 4
+    this.progressThrottleMs = 100
     this.retryableRequest = new RetryableRequest()
-
-    // Progress tracking
     this.partProgress = new Array(part_urls.length).fill(0)
-    this.delegate = delegate
-
-    // Add a dummy xhr for compatibility with the notify system
     this.xhr = new XMLHttpRequest()
   }
 
@@ -97,7 +92,6 @@ export class MultipartBlobUpload {
       xhr.open("PUT", url, true)
       xhr.responseType = "text"
 
-      // Track progress for this part
       xhr.upload.addEventListener("progress", (event) => {
         if (event.lengthComputable) {
           const partProgress = event.loaded
@@ -134,14 +128,21 @@ export class MultipartBlobUpload {
 
   updatePartProgress(partIndex, progress) {
     this.partProgress[partIndex] = progress
+    if (this.emitProgressTimeoutId) { return }
+    this.emitProgressTimeoutId = setTimeout(() => {
+      this.emitProgressEvent()
+    }, this.progressThrottleMs)
+  }
 
-    // Calculate total bytes uploaded across all parts
+  emitProgressEvent() {
+    this.emitProgressTimeoutId = null
     const totalBytesUploaded = this.partProgress.reduce((sum, p) => sum + p, 0)
-
-    // Notify the delegate about progress
-    if (this.delegate && typeof this.delegate.directUploadDidProgress === "function") {
-      this.delegate.directUploadDidProgress({ loaded: totalBytesUploaded, total: this.file.size })
-    }
+    const progressEvent = new ProgressEvent("progress", {
+      lengthComputable: true,
+      loaded: totalBytesUploaded,
+      total: this.file.size
+    })
+    this.xhr.upload.dispatchEvent(progressEvent)
   }
 
   completeMultipartUpload() {
@@ -207,7 +208,7 @@ class RetryableRequest {
       const onError = (error) => {
         if (attempt < this.maxRetries && this.shouldRetry(error)) {
           const delay = Math.round(this.baseDelay * Math.pow(2, attempt) + Math.random() * 1000)
-          console.debug(`${error.context || "Request"} failed, retrying in ${delay}ms (attempt ${attempt + 1}/${this.maxRetries}): ${error.message}`)
+          console.error(`${error.context || "Request"} failed, retrying in ${delay}ms (attempt ${attempt + 1}/${this.maxRetries}): ${error.message}`)
           setTimeout(() => {
             this.execute(requestFn, attempt + 1).then(resolve, reject)
           }, delay)
