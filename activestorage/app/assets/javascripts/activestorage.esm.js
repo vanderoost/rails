@@ -620,38 +620,66 @@ class MultipartBlobUpload {
     this.partSize = part_size;
     this.partUrls = part_urls;
     this.uploadedParts = [];
-    this.currentPartIndex = 0;
-    console.debug("blobId:", this.blobId);
-    console.debug("uploadId:", this.uploadId);
+    this.maxConcurrentUploads = 3;
     this.xhr = new XMLHttpRequest;
   }
   create(callback) {
-    console.debug("MultipartBlobUpload#create starting multipart upload");
     this.callback = callback;
-    this.uploadNextPart();
+    this.uploadPartsConcurrently();
   }
-  uploadNextPart() {
-    if (this.currentPartIndex >= this.partUrls.length) {
+  uploadPartsConcurrently() {
+    this.uploadPartsWithConcurrencyLimit(this.partUrls, this.maxConcurrentUploads).then((() => {
       console.debug("All parts uploaded, completing multipart upload");
       this.completeMultipartUpload();
-      return;
-    }
-    const partData = this.partUrls[this.currentPartIndex];
-    const start = (partData.part_number - 1) * this.partSize;
-    const end = Math.min(start + this.partSize, this.file.size);
-    const chunk = this.file.slice(start, end);
-    console.debug(`Uploading part ${partData.part_number}/${this.partUrls.length}`);
-    this.uploadPart(partData.url, chunk, ((error, etag) => {
-      if (error) {
-        this.callback(error);
-        return;
+    })).catch((error => {
+      this.callback(error);
+    }));
+  }
+  uploadPartsWithConcurrencyLimit(parts, limit) {
+    return new Promise(((resolve, reject) => {
+      const executing = [];
+      let partIndex = 0;
+      const startNextUpload = () => {
+        if (partIndex >= parts.length) {
+          if (executing.length === 0) {
+            resolve();
+          }
+          return;
+        }
+        const partData = parts[partIndex++];
+        const uploadPromise = this.uploadPartAsync(partData);
+        executing.push(uploadPromise);
+        uploadPromise.then((() => {
+          executing.splice(executing.indexOf(uploadPromise), 1);
+          startNextUpload();
+        })).catch((error => {
+          executing.splice(executing.indexOf(uploadPromise), 1);
+          reject(error);
+        }));
+      };
+      for (let i = 0; i < Math.min(limit, parts.length); i++) {
+        startNextUpload();
       }
-      this.uploadedParts.push({
-        etag: etag,
-        part_number: partData.part_number
-      });
-      this.currentPartIndex++;
-      this.uploadNextPart();
+    }));
+  }
+  uploadPartAsync(partData) {
+    return new Promise(((resolve, reject) => {
+      const start = (partData.part_number - 1) * this.partSize;
+      const end = Math.min(start + this.partSize, this.file.size);
+      const chunk = this.file.slice(start, end);
+      console.debug(`Part ${partData.part_number}/${this.partUrls.length} starting`);
+      this.uploadPart(partData.url, chunk, ((error, etag) => {
+        if (error) {
+          reject(error);
+        } else {
+          this.uploadedParts.push({
+            etag: etag,
+            part_number: partData.part_number
+          });
+          console.debug(`Part ${partData.part_number}/${this.partUrls.length} uploaded`);
+          resolve(etag);
+        }
+      }));
     }));
   }
   uploadPart(url, chunk, callback) {
@@ -671,6 +699,7 @@ class MultipartBlobUpload {
     xhr.send(chunk);
   }
   completeMultipartUpload() {
+    this.uploadedParts.sort(((a, b) => a.part_number - b.part_number));
     const xhr = new XMLHttpRequest;
     const completeUrl = `/rails/active_storage/direct_uploads/${this.blobId}`;
     xhr.open("PUT", completeUrl, true);
@@ -854,27 +883,65 @@ class DirectUploadsController {
   constructor(form) {
     this.form = form;
     this.inputs = findElements(form, inputSelector).filter((input => input.files.length));
+    this.maxConcurrentUploads = 3;
   }
   start(callback) {
     const controllers = this.createDirectUploadControllers();
-    const startNextController = () => {
-      const controller = controllers.shift();
-      if (controller) {
-        controller.start((error => {
-          if (error) {
-            callback(error);
-            this.dispatch("end");
-          } else {
-            startNextController();
-          }
-        }));
-      } else {
-        callback();
-        this.dispatch("end");
-      }
-    };
     this.dispatch("start");
-    startNextController();
+    if (controllers.length === 0) {
+      callback();
+      this.dispatch("end");
+      return;
+    }
+    this.uploadControllersConcurrently(controllers, callback);
+  }
+  uploadControllersConcurrently(controllers, callback) {
+    console.debug("DirectUploadsController#startNextController");
+    this.uploadControllersWithConcurrencyLimit(controllers, this.maxConcurrentUploads).then((() => {
+      callback();
+      this.dispatch("end");
+    })).catch((error => {
+      callback(error);
+      this.dispatch("end");
+    }));
+  }
+  uploadControllersWithConcurrencyLimit(controllers, limit) {
+    return new Promise(((resolve, reject) => {
+      const executing = [];
+      let controllerIndex = 0;
+      const startNextUpload = () => {
+        if (controllerIndex >= controllers.length) {
+          if (executing.length === 0) {
+            resolve();
+          }
+          return;
+        }
+        const controller = controllers[controllerIndex++];
+        const uploadPromise = this.uploadControllerAsync(controller);
+        executing.push(uploadPromise);
+        uploadPromise.then((() => {
+          executing.splice(executing.indexOf(uploadPromise), 1);
+          startNextUpload();
+        })).catch((error => {
+          executing.splice(executing.indexOf(uploadPromise), 1);
+          reject(error);
+        }));
+      };
+      for (let i = 0; i < Math.min(limit, controllers.length); i++) {
+        startNextUpload();
+      }
+    }));
+  }
+  uploadControllerAsync(controller) {
+    return new Promise(((resolve, reject) => {
+      controller.start((error => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve();
+        }
+      }));
+    }));
   }
   createDirectUploadControllers() {
     const controllers = [];
