@@ -1062,7 +1062,8 @@
       this.partSize = part_size;
       this.partUrls = part_urls;
       this.uploadedParts = [];
-      this.maxConcurrentUploads = 3;
+      this.maxConcurrentUploads = 4;
+      this.retryableRequest = new RetryableRequest;
       this.xhr = new XMLHttpRequest;
     }
     create(callback) {
@@ -1124,84 +1125,96 @@
         }));
       }));
     }
-    uploadPart(url, chunk, callback, attempt = 1) {
-      const maxRetries = 5;
-      const baseDelay = 1e3;
-      const xhr = new XMLHttpRequest;
-      xhr.open("PUT", url, true);
-      xhr.responseType = "text";
-      xhr.addEventListener("load", (() => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          callback(null, xhr.getResponseHeader("ETag"));
-        } else if (attempt < maxRetries && this.isRetryableStatus(xhr.status)) {
-          const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 1e3;
-          console.debug(`Part upload failed with status ${xhr.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
-          setTimeout((() => {
-            this.uploadPart(url, chunk, callback, attempt + 1);
-          }), delay);
-        } else {
-          callback(new Error(`Failed to upload part: ${xhr.status}`));
-        }
-      }));
-      xhr.addEventListener("error", (() => {
-        if (attempt < maxRetries) {
-          const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 1e3;
-          console.debug(`Part upload network error, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
-          setTimeout((() => {
-            this.uploadPart(url, chunk, callback, attempt + 1);
-          }), delay);
-        } else {
-          callback(new Error("Network error"));
-        }
-      }));
-      xhr.send(chunk);
+    uploadPart(url, chunk, callback) {
+      this.retryableRequest.execute(((onSuccess, onError) => {
+        const xhr = new XMLHttpRequest;
+        xhr.open("PUT", url, true);
+        xhr.responseType = "text";
+        xhr.addEventListener("load", (() => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            onSuccess(xhr.getResponseHeader("ETag"));
+          } else {
+            onError({
+              status: xhr.status,
+              message: `Failed to upload part: ${xhr.status}`,
+              context: "Part upload"
+            });
+          }
+        }));
+        xhr.addEventListener("error", (() => {
+          onError({
+            networkError: true,
+            message: "Network error",
+            context: "Part upload"
+          });
+        }));
+        xhr.send(chunk);
+      })).then((etag => callback(null, etag))).catch((error => callback(new Error(error.message))));
     }
-    isRetryableStatus(status) {
-      return status >= 500 || status === 408 || status === 429;
-    }
-    completeMultipartUpload(attempt = 0) {
+    completeMultipartUpload() {
       this.uploadedParts.sort(((a, b) => a.part_number - b.part_number));
-      const maxRetries = 5;
-      const baseDelay = 1e3;
-      const xhr = new XMLHttpRequest;
-      const completeUrl = `/rails/active_storage/direct_uploads/${this.blobId}`;
-      xhr.open("PUT", completeUrl, true);
-      xhr.setRequestHeader("Content-Type", "application/json");
-      xhr.setRequestHeader("X-CSRF-Token", this.getCSRFToken());
-      xhr.addEventListener("load", (() => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          this.callback(null, this.file);
-        } else if (attempt < maxRetries && this.isRetryableStatus(xhr.status)) {
-          const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 1e3;
-          console.debug(`Complete multipart upload failed with status ${xhr.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
-          setTimeout((() => {
-            this.completeMultipartUpload(attempt + 1);
-          }), delay);
-        } else {
-          this.callback(new Error("Failed to complete multipart upload"));
-        }
-      }));
-      xhr.addEventListener("error", (() => {
-        if (attempt < maxRetries) {
-          const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 1e3;
-          console.debug(`Complete multipart upload network error, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
-          setTimeout((() => {
-            this.completeMultipartUpload(attempt + 1);
-          }), delay);
-        } else {
-          this.callback(new Error("Network error completing multipart upload"));
-        }
-      }));
-      xhr.send(JSON.stringify({
-        blob: {
-          upload_id: this.uploadId,
-          parts: this.uploadedParts
-        }
-      }));
+      this.retryableRequest.execute(((onSuccess, onError) => {
+        const xhr = new XMLHttpRequest;
+        const completeUrl = `/rails/active_storage/direct_uploads/${this.blobId}`;
+        xhr.open("PUT", completeUrl, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("X-CSRF-Token", this.getCSRFToken());
+        xhr.addEventListener("load", (() => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            onSuccess(this.file);
+          } else {
+            onError({
+              status: xhr.status,
+              message: "Failed to complete multipart upload",
+              context: "Complete multipart upload"
+            });
+          }
+        }));
+        xhr.addEventListener("error", (() => {
+          onError({
+            networkError: true,
+            message: "Network error completing multipart upload",
+            context: "Complete multipart upload"
+          });
+        }));
+        xhr.send(JSON.stringify({
+          blob: {
+            upload_id: this.uploadId,
+            parts: this.uploadedParts
+          }
+        }));
+      })).then((file => this.callback(null, file))).catch((error => this.callback(new Error(error.message))));
     }
     getCSRFToken() {
       const meta = document.querySelector('meta[name="csrf-token"]');
       return meta ? meta.content : "";
+    }
+  }
+  class RetryableRequest {
+    constructor(options = {}) {
+      this.maxRetries = options.maxRetries || 5;
+      this.baseDelay = options.baseDelay || 2e3;
+      this.isRetryableStatus = options.isRetryableStatus || (status => status >= 500 || status === 408 || status === 429);
+    }
+    execute(requestFn, attempt = 0) {
+      return new Promise(((resolve, reject) => {
+        const onSuccess = result => resolve(result);
+        const onError = error => {
+          if (attempt < this.maxRetries && this.shouldRetry(error)) {
+            const delay = Math.round(this.baseDelay * Math.pow(2, attempt) + Math.random() * 1e3);
+            console.debug(`${error.context || "Request"} failed, retrying in ${delay}ms (attempt ${attempt + 1}/${this.maxRetries}): ${error.message}`);
+            setTimeout((() => {
+              this.execute(requestFn, attempt + 1).then(resolve, reject);
+            }), delay);
+          } else {
+            reject(error);
+          }
+        };
+        requestFn(onSuccess, onError);
+      }));
+    }
+    shouldRetry(error) {
+      return error.networkError || error.status && this.isRetryableStatus(error.status);
     }
   }
   let id = 0;
