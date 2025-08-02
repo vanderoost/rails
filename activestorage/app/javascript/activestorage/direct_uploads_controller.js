@@ -13,7 +13,6 @@ export class DirectUploadsController {
     const controllers = this.createDirectUploadControllers()
 
     const startNextController = () => {
-      console.debug("DirectUploadsController#startNextController")
       const controller = controllers.shift()
       if (controller) {
         controller.start(error => {
