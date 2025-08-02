@@ -65,4 +65,10 @@ export class DirectUploadController {
     this.dispatch("before-storage-request", { xhr })
     xhr.upload.addEventListener("progress", event => this.uploadRequestDidProgress(event))
   }
+
+  // Multipart upload progress delegate method
+  directUploadDidProgress(event) {
+    console.debug("directUploadDidProgress called with:", event)
+    this.uploadRequestDidProgress(event)
+  }
 }
