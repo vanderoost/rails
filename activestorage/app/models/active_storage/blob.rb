@@ -50,7 +50,7 @@ class ActiveStorage::Blob < ActiveStorage::Record
   end
 
   validates :service_name, presence: true
-  validates :checksum, presence: true, unless: :composed
+  validates :checksum, presence: true, unless: -> { composed || checksum.nil? }
 
   validate do
     if service_name_changed? && service_name.present?
