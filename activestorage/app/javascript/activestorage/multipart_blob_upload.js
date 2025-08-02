@@ -1,5 +1,5 @@
 export class MultipartBlobUpload {
-  constructor(blobRecord) {
+  constructor(blobRecord, delegate) {
     this.file = blobRecord.file
     this.blobId = blobRecord.attributes.id
 
@@ -11,6 +11,10 @@ export class MultipartBlobUpload {
     this.uploadedParts = []
     this.maxConcurrentUploads = 4
     this.retryableRequest = new RetryableRequest()
+
+    // Progress tracking
+    this.partProgress = new Array(part_urls.length).fill(0)
+    this.delegate = delegate
 
     // Add a dummy xhr for compatibility with the notify system
     this.xhr = new XMLHttpRequest()
@@ -83,18 +87,27 @@ export class MultipartBlobUpload {
           console.debug(`Part ${partData.part_number}/${this.partUrls.length} uploaded`)
           resolve(etag)
         }
-      })
+      }, partData.part_number)
     })
   }
 
-  uploadPart(url, chunk, callback) {
+  uploadPart(url, chunk, callback, partNumber) {
     this.retryableRequest.execute((onSuccess, onError) => {
       const xhr = new XMLHttpRequest()
       xhr.open("PUT", url, true)
       xhr.responseType = "text"
 
+      // Track progress for this part
+      xhr.upload.addEventListener("progress", (event) => {
+        if (event.lengthComputable) {
+          const partProgress = event.loaded
+          this.updatePartProgress(partNumber - 1, partProgress)
+        }
+      })
+
       xhr.addEventListener("load", () => {
         if (xhr.status >= 200 && xhr.status < 300) {
+          this.updatePartProgress(partNumber - 1, chunk.size)
           onSuccess(xhr.getResponseHeader("ETag"))
         } else {
           onError({
@@ -117,6 +130,18 @@ export class MultipartBlobUpload {
     })
       .then(etag => callback(null, etag))
       .catch(error => callback(new Error(error.message)))
+  }
+
+  updatePartProgress(partIndex, progress) {
+    this.partProgress[partIndex] = progress
+
+    // Calculate total bytes uploaded across all parts
+    const totalBytesUploaded = this.partProgress.reduce((sum, p) => sum + p, 0)
+
+    // Notify the delegate about progress
+    if (this.delegate && typeof this.delegate.directUploadDidProgress === "function") {
+      this.delegate.directUploadDidProgress({ loaded: totalBytesUploaded, total: this.file.size })
+    }
   }
 
   completeMultipartUpload() {
