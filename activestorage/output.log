@@ -4,148 +4,63 @@ yarn run v1.22.22
 $ yarn lint
 $ eslint app/javascript
 $ rollup --config rollup.config.js
-Done in 1.21s.
+Done in 1.38s.
 
 
 Generating image variants require the image_processing gem. Please add `gem 'image_processing', '~> 1.2'` to your Gemfile.
-  [1m[36mActiveRecord::InternalMetadata Load (0.1ms)[0m  [1m[34mSELECT * FROM "ar_internal_metadata" WHERE "ar_internal_metadata"."key" = ? ORDER BY "ar_internal_metadata"."key" ASC LIMIT 1[0m  [[nil, "schema_sha1"]]
-  [1m[36mActiveRecord::SchemaMigration Load (0.1ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC[0m
+  [1m[36mActiveRecord::InternalMetadata Load (0.3ms)[0m  [1m[34mSELECT * FROM "ar_internal_metadata" WHERE "ar_internal_metadata"."key" = ? ORDER BY "ar_internal_metadata"."key" ASC LIMIT 1[0m  [[nil, "schema_sha1"]]
+  [1m[36mActiveRecord::SchemaMigration Load (0.3ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC[0m
 Running 3 tests in a single process (parallelization threshold is 50)
-Run options: --seed 40773
+Run options: --seed 10126
 
 # Running:
 
   [1m[36mTRANSACTION (0.1ms)[0m  [1m[36mBEGIN deferred TRANSACTION[0m
----------------------------------------------------
-UploadsTest: test_smaller_than_5MB_multipart_upload
----------------------------------------------------
-Capybara starting Puma...
-* Version 6.6.0, codename: Return to Forever
-* Min threads: 0, max threads: 4
-* Listening on http://127.0.0.1:63076
-Started GET "/?multipart_upload=true" for 127.0.0.1 at 2025-08-02 16:56:11 +0100
-Processing by UploadsController#new as HTML
-  Parameters: {"multipart_upload" => "true"}
-  Rendering layout layouts/application.html.erb
-  Rendering uploads/new.html.erb within layouts/application
-  Rendered uploads/new.html.erb within layouts/application (Duration: 2.3ms | GC: 0.0ms)
-  Rendered layout layouts/application.html.erb (Duration: 7.4ms | GC: 0.0ms)
-Completed 200 OK in 90ms (Views: 9.7ms | ActiveRecord: 0.4ms (0 queries, 0 cached) | GC: 0.2ms)
-Started GET "/assets/application-8b441ae0.css" for 127.0.0.1 at 2025-08-02 16:56:11 +0100
-Started GET "/assets/application-67ca8a48.js" for 127.0.0.1 at 2025-08-02 16:56:11 +0100
-Started GET "/assets/activestorage.esm-9d010765.js" for 127.0.0.1 at 2025-08-02 16:56:11 +0100
-Started GET "/assets/stimulus-loading-1fc53fe7.js" for 127.0.0.1 at 2025-08-02 16:56:11 +0100
-Started GET "/assets/controllers/application-3affb389.js" for 127.0.0.1 at 2025-08-02 16:56:11 +0100
-Started GET "/assets/controllers/hello_controller-708796bd.js" for 127.0.0.1 at 2025-08-02 16:56:11 +0100
-Started GET "/assets/controllers/index-ee64e1f1.js" for 127.0.0.1 at 2025-08-02 16:56:11 +0100
-Started GET "/assets/stimulus.min-4b1e420e.js" for 127.0.0.1 at 2025-08-02 16:56:12 +0100
-Started GET "/assets/turbo.min-3a2e143f.js" for 127.0.0.1 at 2025-08-02 16:56:12 +0100
-[JS console.debug] DirectUploadsController#startNextController
-[JS console.debug] BlobRecord#create (sending to the server)
-Started POST "/rails/active_storage/direct_uploads" for 127.0.0.1 at 2025-08-02 16:56:12 +0100
-Processing by ActiveStorage::DirectUploadsController#create as JSON
-  Parameters: {"blob" => {"filename" => "suzanne-1.2m.blend", "content_type" => "application/octet-stream", "byte_size" => 1310538, "checksum" => nil}, "direct_upload" => {"blob" => {"filename" => "suzanne-1.2m.blend", "content_type" => "application/octet-stream", "byte_size" => 1310538, "checksum" => nil}}}
-  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mSAVEPOINT active_record_1[0m
-  [1m[36mActiveStorage::Blob Create (0.2ms)[0m  [1m[32mINSERT INTO "active_storage_blobs" ("byte_size", "checksum", "content_type", "created_at", "filename", "key", "metadata", "service_name") VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING "id"[0m  [["byte_size", 1310538], ["checksum", nil], ["content_type", "application/octet-stream"], ["created_at", "2025-08-02 15:56:12.199333"], ["filename", "suzanne-1.2m.blend"], ["key", "hy4tfh67xshe49g30lwru31jysny"], ["metadata", nil], ["service_name", "localstack"]]
-  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mRELEASE SAVEPOINT active_record_1[0m
-Multipart with 1 parts of size 1310538
-[36m  S3 Storage (3.1ms) [0m[34mGenerated URL for file at key: hy4tfh67xshe49g30lwru31jysny (http://localhost:4566/rails-multipart-direct-uploads/hy4tfh67xshe49g30lwru31jysny?partNumber=1&uploadId=kv3W8N32uPKZY4OFjJzNWy0YWWf90xqRrU3KEq4GWCLssSxpuvDnqrEX7ph9gXtidE-ArAwuva6UDxpRzp539496JU_JP0jHzdAVmAg1rloil5wi2duuSE2SbEZxNviW&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=test%2F20250802%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250802T155612Z&X-Amz-Expires=300&X-Amz-SignedHeaders=host&X-Amz-Signature=6da7238bae0b375df15fa2678fb7d84ff1a4e6fa6c4a351ea7d8ff3c790a2d96)[0m
-Completed 200 OK in 30ms (Views: 0.1ms | ActiveRecord: 0.4ms (1 query, 0 cached) | GC: 1.1ms)
-[JS console.debug] BlobRecord response: Object(11)
-[[["id", {"type" => "number", "value" => 1}],
-  ["byte_size", {"type" => "number", "value" => 1310538}],
-  ["checksum", {"type" => "null"}],
-  ["content_type",
-   {"type" => "string", "value" => "application/octet-stream"}],
-  ["created_at", {"type" => "string", "value" => "2025-08-02T15:56:12.199Z"}],
-  ["filename", {"type" => "string", "value" => "suzanne-1.2m.blend"}],
-  ["key", {"type" => "string", "value" => "hy4tfh67xshe49g30lwru31jysny"}],
-  ["metadata", {"type" => "object", "value" => []}],
-  ["service_name", {"type" => "string", "value" => "localstack"}],
-  ["attachable_sgid",
-   {"type" => "string",
-    "value" =>
-     "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL3JhaWxzLW11bHRpcGFydC1kaXJlY3QtdXBsb2Fkcy9BY3RpdmVTdG9yYWdlOjpCbG9iLzE_ZXhwaXJlc19pbiIsInB1ciI6ImF0dGFjaGFibGUifX0=--8a7382e9090b41514e27c309fa30edf3d5733367"}],
-  ["signed_id",
-   {"type" => "string",
-    "value" =>
-     "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoiYmxvYl9pZCJ9fQ==--1ac8f89416a05d1fb99635df6ea3a97115f6a2e2"}]]]
-[JS console.debug] Part 1/1 starting
-Started PUT "/rails/active_storage/direct_uploads/1" for 127.0.0.1 at 2025-08-02 16:56:12 +0100
-Processing by ActiveStorage::DirectUploadsController#update as */*
-  Parameters: {"blob" => {"upload_id" => "kv3W8N32uPKZY4OFjJzNWy0YWWf90xqRrU3KEq4GWCLssSxpuvDnqrEX7ph9gXtidE-ArAwuva6UDxpRzp539496JU_JP0jHzdAVmAg1rloil5wi2duuSE2SbEZxNviW", "parts" => [{"etag" => "\"c21ac89bf079783803ade9c697671fc4\"", "part_number" => 1}]}, "id" => "1", "direct_upload" => {"blob" => {"upload_id" => "kv3W8N32uPKZY4OFjJzNWy0YWWf90xqRrU3KEq4GWCLssSxpuvDnqrEX7ph9gXtidE-ArAwuva6UDxpRzp539496JU_JP0jHzdAVmAg1rloil5wi2duuSE2SbEZxNviW", "parts" => [{"etag" => "\"c21ac89bf079783803ade9c697671fc4\"", "part_number" => 1}]}}}
-  [1m[36mActiveStorage::Blob Load (0.1ms)[0m  [1m[34mSELECT "active_storage_blobs".* FROM "active_storage_blobs" WHERE "active_storage_blobs"."id" = ? LIMIT ?[0m  [["id", 1], ["LIMIT", 1]]
-[JS console.debug] Part 1/1 uploaded
-[JS console.debug] All parts uploaded, completing multipart upload
-Completed 200 OK in 12ms (ActiveRecord: 0.1ms (1 query, 0 cached) | GC: 0.2ms)
-Started POST "/uploads" for 127.0.0.1 at 2025-08-02 16:56:12 +0100
-Processing by UploadsController#create as TURBO_STREAM
-  Parameters: {"upload" => {"files" => ["", "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoiYmxvYl9pZCJ9fQ==--1ac8f89416a05d1fb99635df6ea3a97115f6a2e2"]}, "commit" => "Create Upload"}
-  [1m[36mActiveStorage::Blob Load (0.1ms)[0m  [1m[34mSELECT "active_storage_blobs".* FROM "active_storage_blobs" WHERE "active_storage_blobs"."id" = ? LIMIT ?[0m  [["id", 1], ["LIMIT", 1]]
-  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mSAVEPOINT active_record_1[0m
-  [1m[36mUpload Create (0.7ms)[0m  [1m[32mINSERT INTO "uploads" ("created_at", "updated_at") VALUES (?, ?) RETURNING "id"[0m  [["created_at", "2025-08-02 15:56:12.276924"], ["updated_at", "2025-08-02 15:56:12.276924"]]
-  [1m[36mActiveStorage::Blob Update (0.0ms)[0m  [1m[33mUPDATE "active_storage_blobs" SET "metadata" = ? WHERE "active_storage_blobs"."id" = ?[0m  [["metadata", "{\"identified\":true}"], ["id", 1]]
-  [1m[36mActiveStorage::Attachment Load (0.6ms)[0m  [1m[34mSELECT "active_storage_attachments".* FROM "active_storage_attachments" WHERE "active_storage_attachments"."blob_id" = ?[0m  [["blob_id", 1]]
-  [1m[36mActiveStorage::Attachment Create (0.1ms)[0m  [1m[32mINSERT INTO "active_storage_attachments" ("blob_id", "created_at", "name", "record_id", "record_type") VALUES (?, ?, ?, ?, ?) RETURNING "id"[0m  [["blob_id", 1], ["created_at", "2025-08-02 15:56:12.282912"], ["name", "files"], ["record_id", 1], ["record_type", "Upload"]]
-  [1m[36mUpload Update (0.1ms)[0m  [1m[33mUPDATE "uploads" SET "updated_at" = ? WHERE "uploads"."id" = ?[0m  [["updated_at", "2025-08-02 15:56:12.284305"], ["id", 1]]
-  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mRELEASE SAVEPOINT active_record_1[0m
-  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mSAVEPOINT active_record_1[0m
-  [1m[36mActiveStorage::Blob Update (0.1ms)[0m  [1m[33mUPDATE "active_storage_blobs" SET "metadata" = ? WHERE "active_storage_blobs"."id" = ?[0m  [["metadata", "{\"identified\":true,\"analyzed\":true}"], ["id", 1]]
-  [1m[36mActiveStorage::Attachment Load (0.0ms)[0m  [1m[34mSELECT "active_storage_attachments".* FROM "active_storage_attachments" WHERE "active_storage_attachments"."blob_id" = ?[0m  [["blob_id", 1]]
-  [1m[36mUpload Load (0.0ms)[0m  [1m[34mSELECT "uploads".* FROM "uploads" WHERE "uploads"."id" = ?[0m  [["id", 1]]
-  [1m[36mUpload Update (0.0ms)[0m  [1m[33mUPDATE "uploads" SET "updated_at" = ? WHERE "uploads"."id" = ?[0m  [["updated_at", "2025-08-02 15:56:12.290433"], ["id", 1]]
-  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mRELEASE SAVEPOINT active_record_1[0m
-Redirected to http://127.0.0.1:63076/uploads
-Completed 302 Found in 30ms (ActiveRecord: 1.9ms (10 queries, 0 cached) | GC: 0.4ms)
-Started GET "/uploads" for 127.0.0.1 at 2025-08-02 16:56:12 +0100
-Processing by UploadsController#index as TURBO_STREAM
-  Rendering layout layouts/application.html.erb
-  Rendering uploads/index.html.erb within layouts/application
-  [1m[36mUpload Load (0.0ms)[0m  [1m[34mSELECT "uploads".* FROM "uploads"[0m
-  [1m[36mActiveStorage::Attachment Load (0.1ms)[0m  [1m[34mSELECT "active_storage_attachments".* FROM "active_storage_attachments" WHERE "active_storage_attachments"."record_id" = ? AND "active_storage_attachments"."record_type" = ? AND "active_storage_attachments"."name" = ?[0m  [["record_id", 1], ["record_type", "Upload"], ["name", "files"]]
-  [1m[36mActiveStorage::Blob Load (0.1ms)[0m  [1m[34mSELECT "active_storage_blobs".* FROM "active_storage_blobs" WHERE "active_storage_blobs"."id" = ? LIMIT ?[0m  [["id", 1], ["LIMIT", 1]]
-  Rendered collection of uploads/_upload.html.erb [1 times] (Duration: 7.8ms | GC: 0.0ms)
-  Rendered uploads/index.html.erb within layouts/application (Duration: 8.7ms | GC: 0.0ms)
-  Rendered layout layouts/application.html.erb (Duration: 9.0ms | GC: 0.0ms)
-Completed 200 OK in 10ms (Views: 9.0ms | ActiveRecord: 0.2ms (3 queries, 0 cached) | GC: 0.0ms)
-  [1m[36mUpload Load (0.1ms)[0m  [1m[34mSELECT "uploads".* FROM "uploads" ORDER BY "uploads"."id" DESC LIMIT ?[0m  [["LIMIT", 1]]
-  [1m[36mActiveStorage::Attachment Load (0.2ms)[0m  [1m[34mSELECT "active_storage_attachments".* FROM "active_storage_attachments" WHERE "active_storage_attachments"."record_id" = ? AND "active_storage_attachments"."record_type" = ? AND "active_storage_attachments"."name" = ? ORDER BY "active_storage_attachments"."id" ASC LIMIT ?[0m  [["record_id", 1], ["record_type", "Upload"], ["name", "files"], ["LIMIT", 1]]
-  [1m[36mActiveStorage::Blob Load (0.0ms)[0m  [1m[34mSELECT "active_storage_blobs".* FROM "active_storage_blobs" WHERE "active_storage_blobs"."id" = ? LIMIT ?[0m  [["id", 1], ["LIMIT", 1]]
-  [1m[36mTRANSACTION (0.1ms)[0m  [1m[31mROLLBACK TRANSACTION[0m
-[36m  S3 Storage (16.9ms) [0m[31mDeleted files by key prefix: [0m
-.  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mBEGIN deferred TRANSACTION[0m
 ----------------------------------
 UploadsTest: test_multipart_upload
 ----------------------------------
-Started GET "/?multipart_upload=true" for 127.0.0.1 at 2025-08-02 16:56:12 +0100
+Capybara starting Puma...
+* Version 6.6.0, codename: Return to Forever
+* Min threads: 0, max threads: 4
+* Listening on http://127.0.0.1:52603
+Started GET "/?multipart_upload=true" for 127.0.0.1 at 2025-08-02 17:17:56 +0100
 Processing by UploadsController#new as HTML
   Parameters: {"multipart_upload" => "true"}
   Rendering layout layouts/application.html.erb
   Rendering uploads/new.html.erb within layouts/application
-  Rendered uploads/new.html.erb within layouts/application (Duration: 1.7ms | GC: 0.0ms)
-  Rendered layout layouts/application.html.erb (Duration: 2.2ms | GC: 0.0ms)
-Completed 200 OK in 4ms (Views: 2.4ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+  Rendered uploads/new.html.erb within layouts/application (Duration: 1.3ms | GC: 0.0ms)
+  Rendered layout layouts/application.html.erb (Duration: 7.1ms | GC: 0.0ms)
+Completed 200 OK in 93ms (Views: 8.8ms | ActiveRecord: 0.3ms (0 queries, 0 cached) | GC: 4.8ms)
+Started GET "/assets/application-8b441ae0.css" for 127.0.0.1 at 2025-08-02 17:17:56 +0100
+Started GET "/assets/application-67ca8a48.js" for 127.0.0.1 at 2025-08-02 17:17:56 +0100
+Started GET "/assets/controllers/application-3affb389.js" for 127.0.0.1 at 2025-08-02 17:17:56 +0100
+Started GET "/assets/stimulus-loading-1fc53fe7.js" for 127.0.0.1 at 2025-08-02 17:17:56 +0100
+Started GET "/assets/activestorage.esm-c42ddb70.js" for 127.0.0.1 at 2025-08-02 17:17:56 +0100
+Started GET "/assets/controllers/hello_controller-708796bd.js" for 127.0.0.1 at 2025-08-02 17:17:56 +0100
+Started GET "/assets/controllers/index-ee64e1f1.js" for 127.0.0.1 at 2025-08-02 17:17:56 +0100
+Started GET "/assets/stimulus.min-4b1e420e.js" for 127.0.0.1 at 2025-08-02 17:17:56 +0100
+Started GET "/assets/turbo.min-3a2e143f.js" for 127.0.0.1 at 2025-08-02 17:17:56 +0100
 [JS console.debug] DirectUploadsController#startNextController
-Started POST "/rails/active_storage/direct_uploads" for 127.0.0.1 at 2025-08-02 16:56:12 +0100
+[JS console.debug] BlobRecord#create (sending to the server)
+Started POST "/rails/active_storage/direct_uploads" for 127.0.0.1 at 2025-08-02 17:17:57 +0100
 Processing by ActiveStorage::DirectUploadsController#create as JSON
   Parameters: {"blob" => {"filename" => "suzannes-25m.blend", "content_type" => "application/octet-stream", "byte_size" => 26180640, "checksum" => nil}, "direct_upload" => {"blob" => {"filename" => "suzannes-25m.blend", "content_type" => "application/octet-stream", "byte_size" => 26180640, "checksum" => nil}}}
   [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mSAVEPOINT active_record_1[0m
-[JS console.debug] BlobRecord#create (sending to the server)
-  [1m[36mActiveStorage::Blob Create (218.5ms)[0m  [1m[32mINSERT INTO "active_storage_blobs" ("byte_size", "checksum", "content_type", "created_at", "filename", "key", "metadata", "service_name") VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING "id"[0m  [["byte_size", 26180640], ["checksum", nil], ["content_type", "application/octet-stream"], ["created_at", "2025-08-02 15:56:12.903276"], ["filename", "suzannes-25m.blend"], ["key", "x74khz448587grce4blwq45pzn3u"], ["metadata", nil], ["service_name", "localstack"]]
+  [1m[36mActiveStorage::Blob Create (0.4ms)[0m  [1m[32mINSERT INTO "active_storage_blobs" ("byte_size", "checksum", "content_type", "created_at", "filename", "key", "metadata", "service_name") VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING "id"[0m  [["byte_size", 26180640], ["checksum", nil], ["content_type", "application/octet-stream"], ["created_at", "2025-08-02 16:17:57.126450"], ["filename", "suzannes-25m.blend"], ["key", "73hf4qrkq11a0d29i60e9reqorqc"], ["metadata", nil], ["service_name", "localstack"]]
   [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mRELEASE SAVEPOINT active_record_1[0m
 Multipart with 2 parts of size 13090320
-[36m  S3 Storage (1.2ms) [0m[34mGenerated URL for file at key: x74khz448587grce4blwq45pzn3u (http://localhost:4566/rails-multipart-direct-uploads/x74khz448587grce4blwq45pzn3u?partNumber=1&uploadId=8N4vjpWT0IH-qiVMFm_nqY02LOeatahbO1qSL6TDhQXksigckwGrEpE_R54Fe7VZjn522qxam3jW7-zLPmA1P8OO6783N_pFrDbAWm_PBfSjwjfYRoIhzfHuTgbGdagW&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=test%2F20250802%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250802T155613Z&X-Amz-Expires=300&X-Amz-SignedHeaders=host&X-Amz-Signature=b94978fc60227b788ad1ce42230873e22dbef0a70ec28b110c3336627b31f9fa)[0m
-[36m  S3 Storage (0.5ms) [0m[34mGenerated URL for file at key: x74khz448587grce4blwq45pzn3u (http://localhost:4566/rails-multipart-direct-uploads/x74khz448587grce4blwq45pzn3u?partNumber=2&uploadId=8N4vjpWT0IH-qiVMFm_nqY02LOeatahbO1qSL6TDhQXksigckwGrEpE_R54Fe7VZjn522qxam3jW7-zLPmA1P8OO6783N_pFrDbAWm_PBfSjwjfYRoIhzfHuTgbGdagW&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=test%2F20250802%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250802T155613Z&X-Amz-Expires=300&X-Amz-SignedHeaders=host&X-Amz-Signature=e3f5db62e4cd0272e40302591d64b86e6d0389367d977793403269a877d52d42)[0m
-Completed 200 OK in 239ms (Views: 0.2ms | ActiveRecord: 218.6ms (1 query, 0 cached) | GC: 0.0ms)
+[36m  S3 Storage (16.1ms) [0m[34mGenerated URL for file at key: 73hf4qrkq11a0d29i60e9reqorqc (http://localhost:4566/rails-multipart-direct-uploads/73hf4qrkq11a0d29i60e9reqorqc?partNumber=1&uploadId=2D8dMXUGX7pxhYDcyOiKsDe5xWtuWx91C8BYcZLh4LGCufoq-X9_rCQhuj2iSRRbtlXhztmJStgztOMZwIcRzsy1UmUutcCtaBqDyoYR2X9SDr9KWP2bQ_OEOYRNALd4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=test%2F20250802%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250802T161757Z&X-Amz-Expires=300&X-Amz-SignedHeaders=host&X-Amz-Signature=a3e52f6b7c9f062072fe08ca1c3516c540aef38ab4dcaf12615a04243be7e702)[0m
+[36m  S3 Storage (1.2ms) [0m[34mGenerated URL for file at key: 73hf4qrkq11a0d29i60e9reqorqc (http://localhost:4566/rails-multipart-direct-uploads/73hf4qrkq11a0d29i60e9reqorqc?partNumber=2&uploadId=2D8dMXUGX7pxhYDcyOiKsDe5xWtuWx91C8BYcZLh4LGCufoq-X9_rCQhuj2iSRRbtlXhztmJStgztOMZwIcRzsy1UmUutcCtaBqDyoYR2X9SDr9KWP2bQ_OEOYRNALd4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=test%2F20250802%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250802T161757Z&X-Amz-Expires=300&X-Amz-SignedHeaders=host&X-Amz-Signature=7dee55f1adb6a50289641cfd1334e93f833cb2ec69b9a0112e7771e7ce7786f2)[0m
+Completed 200 OK in 57ms (Views: 0.6ms | ActiveRecord: 0.6ms (1 query, 0 cached) | GC: 13.6ms)
 [JS console.debug] BlobRecord response: Object(11)
 [[["id", {"type" => "number", "value" => 1}],
   ["byte_size", {"type" => "number", "value" => 26180640}],
   ["checksum", {"type" => "null"}],
   ["content_type",
    {"type" => "string", "value" => "application/octet-stream"}],
-  ["created_at", {"type" => "string", "value" => "2025-08-02T15:56:12.903Z"}],
+  ["created_at", {"type" => "string", "value" => "2025-08-02T16:17:57.126Z"}],
   ["filename", {"type" => "string", "value" => "suzannes-25m.blend"}],
-  ["key", {"type" => "string", "value" => "x74khz448587grce4blwq45pzn3u"}],
+  ["key", {"type" => "string", "value" => "73hf4qrkq11a0d29i60e9reqorqc"}],
   ["metadata", {"type" => "object", "value" => []}],
   ["service_name", {"type" => "string", "value" => "localstack"}],
   ["attachable_sgid",
@@ -159,79 +74,164 @@ Completed 200 OK in 239ms (Views: 0.2ms | ActiveRecord: 218.6ms (1 query, 0 cach
 [JS console.debug] Part 1/2 starting
 [JS console.debug] Part 2/2 starting
 [JS console.debug] Part 2/2 uploaded
-Started PUT "/rails/active_storage/direct_uploads/1" for 127.0.0.1 at 2025-08-02 16:56:13 +0100
-Processing by ActiveStorage::DirectUploadsController#update as */*
-  Parameters: {"blob" => {"upload_id" => "8N4vjpWT0IH-qiVMFm_nqY02LOeatahbO1qSL6TDhQXksigckwGrEpE_R54Fe7VZjn522qxam3jW7-zLPmA1P8OO6783N_pFrDbAWm_PBfSjwjfYRoIhzfHuTgbGdagW", "parts" => [{"etag" => "\"b5e5ba9656a5e09bfffb251c65e7ec1e\"", "part_number" => 1}, {"etag" => "\"896d746d13e91c54ab4d56aae133f5ae\"", "part_number" => 2}]}, "id" => "1", "direct_upload" => {"blob" => {"upload_id" => "8N4vjpWT0IH-qiVMFm_nqY02LOeatahbO1qSL6TDhQXksigckwGrEpE_R54Fe7VZjn522qxam3jW7-zLPmA1P8OO6783N_pFrDbAWm_PBfSjwjfYRoIhzfHuTgbGdagW", "parts" => [{"etag" => "\"b5e5ba9656a5e09bfffb251c65e7ec1e\"", "part_number" => 1}, {"etag" => "\"896d746d13e91c54ab4d56aae133f5ae\"", "part_number" => 2}]}}}
-  [1m[36mActiveStorage::Blob Load (0.1ms)[0m  [1m[34mSELECT "active_storage_blobs".* FROM "active_storage_blobs" WHERE "active_storage_blobs"."id" = ? LIMIT ?[0m  [["id", 1], ["LIMIT", 1]]
-[JS console.debug] All parts uploaded, completing multipart upload
 [JS console.debug] Part 1/2 uploaded
-Completed 200 OK in 22ms (ActiveRecord: 0.1ms (1 query, 0 cached) | GC: 0.0ms)
-Started POST "/uploads" for 127.0.0.1 at 2025-08-02 16:56:13 +0100
+[JS console.debug] All parts uploaded, completing multipart upload
+Started PUT "/rails/active_storage/direct_uploads/1" for 127.0.0.1 at 2025-08-02 17:17:57 +0100
+Processing by ActiveStorage::DirectUploadsController#update as */*
+  Parameters: {"blob" => {"upload_id" => "2D8dMXUGX7pxhYDcyOiKsDe5xWtuWx91C8BYcZLh4LGCufoq-X9_rCQhuj2iSRRbtlXhztmJStgztOMZwIcRzsy1UmUutcCtaBqDyoYR2X9SDr9KWP2bQ_OEOYRNALd4", "parts" => [{"etag" => "\"b5e5ba9656a5e09bfffb251c65e7ec1e\"", "part_number" => 1}, {"etag" => "\"896d746d13e91c54ab4d56aae133f5ae\"", "part_number" => 2}]}, "id" => "1", "direct_upload" => {"blob" => {"upload_id" => "2D8dMXUGX7pxhYDcyOiKsDe5xWtuWx91C8BYcZLh4LGCufoq-X9_rCQhuj2iSRRbtlXhztmJStgztOMZwIcRzsy1UmUutcCtaBqDyoYR2X9SDr9KWP2bQ_OEOYRNALd4", "parts" => [{"etag" => "\"b5e5ba9656a5e09bfffb251c65e7ec1e\"", "part_number" => 1}, {"etag" => "\"896d746d13e91c54ab4d56aae133f5ae\"", "part_number" => 2}]}}}
+  [1m[36mActiveStorage::Blob Load (0.2ms)[0m  [1m[34mSELECT "active_storage_blobs".* FROM "active_storage_blobs" WHERE "active_storage_blobs"."id" = ? LIMIT ?[0m  [["id", 1], ["LIMIT", 1]]
+Completed 200 OK in 29ms (ActiveRecord: 0.1ms (1 query, 0 cached) | GC: 0.9ms)
+Started POST "/uploads" for 127.0.0.1 at 2025-08-02 17:17:57 +0100
 Processing by UploadsController#create as TURBO_STREAM
   Parameters: {"upload" => {"files" => ["", "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoiYmxvYl9pZCJ9fQ==--1ac8f89416a05d1fb99635df6ea3a97115f6a2e2"]}, "commit" => "Create Upload"}
   [1m[36mActiveStorage::Blob Load (0.1ms)[0m  [1m[34mSELECT "active_storage_blobs".* FROM "active_storage_blobs" WHERE "active_storage_blobs"."id" = ? LIMIT ?[0m  [["id", 1], ["LIMIT", 1]]
   [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mSAVEPOINT active_record_1[0m
-  [1m[36mUpload Create (0.2ms)[0m  [1m[32mINSERT INTO "uploads" ("created_at", "updated_at") VALUES (?, ?) RETURNING "id"[0m  [["created_at", "2025-08-02 15:56:13.391598"], ["updated_at", "2025-08-02 15:56:13.391598"]]
+  [1m[36mUpload Create (0.1ms)[0m  [1m[32mINSERT INTO "uploads" ("created_at", "updated_at") VALUES (?, ?) RETURNING "id"[0m  [["created_at", "2025-08-02 16:17:57.457714"], ["updated_at", "2025-08-02 16:17:57.457714"]]
+  [1m[36mActiveStorage::Blob Update (0.0ms)[0m  [1m[33mUPDATE "active_storage_blobs" SET "metadata" = ? WHERE "active_storage_blobs"."id" = ?[0m  [["metadata", "{\"identified\":true}"], ["id", 1]]
+  [1m[36mActiveStorage::Attachment Load (0.6ms)[0m  [1m[34mSELECT "active_storage_attachments".* FROM "active_storage_attachments" WHERE "active_storage_attachments"."blob_id" = ?[0m  [["blob_id", 1]]
+  [1m[36mActiveStorage::Attachment Create (0.1ms)[0m  [1m[32mINSERT INTO "active_storage_attachments" ("blob_id", "created_at", "name", "record_id", "record_type") VALUES (?, ?, ?, ?, ?) RETURNING "id"[0m  [["blob_id", 1], ["created_at", "2025-08-02 16:17:57.462792"], ["name", "files"], ["record_id", 1], ["record_type", "Upload"]]
+  [1m[36mUpload Update (0.0ms)[0m  [1m[33mUPDATE "uploads" SET "updated_at" = ? WHERE "uploads"."id" = ?[0m  [["updated_at", "2025-08-02 16:17:57.464172"], ["id", 1]]
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mRELEASE SAVEPOINT active_record_1[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mSAVEPOINT active_record_1[0m
+  [1m[36mActiveStorage::Blob Update (0.1ms)[0m  [1m[33mUPDATE "active_storage_blobs" SET "metadata" = ? WHERE "active_storage_blobs"."id" = ?[0m  [["metadata", "{\"identified\":true,\"analyzed\":true}"], ["id", 1]]
+  [1m[36mActiveStorage::Attachment Load (0.0ms)[0m  [1m[34mSELECT "active_storage_attachments".* FROM "active_storage_attachments" WHERE "active_storage_attachments"."blob_id" = ?[0m  [["blob_id", 1]]
+  [1m[36mUpload Load (0.0ms)[0m  [1m[34mSELECT "uploads".* FROM "uploads" WHERE "uploads"."id" = ?[0m  [["id", 1]]
+  [1m[36mUpload Update (0.0ms)[0m  [1m[33mUPDATE "uploads" SET "updated_at" = ? WHERE "uploads"."id" = ?[0m  [["updated_at", "2025-08-02 16:17:57.469734"], ["id", 1]]
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mRELEASE SAVEPOINT active_record_1[0m
+Redirected to http://127.0.0.1:52603/uploads
+Completed 302 Found in 32ms (ActiveRecord: 1.3ms (10 queries, 0 cached) | GC: 0.7ms)
+Started GET "/uploads" for 127.0.0.1 at 2025-08-02 17:17:57 +0100
+Processing by UploadsController#index as TURBO_STREAM
+  Rendering layout layouts/application.html.erb
+  Rendering uploads/index.html.erb within layouts/application
+  [1m[36mUpload Load (0.0ms)[0m  [1m[34mSELECT "uploads".* FROM "uploads"[0m
+  [1m[36mActiveStorage::Attachment Load (0.0ms)[0m  [1m[34mSELECT "active_storage_attachments".* FROM "active_storage_attachments" WHERE "active_storage_attachments"."record_id" = ? AND "active_storage_attachments"."record_type" = ? AND "active_storage_attachments"."name" = ?[0m  [["record_id", 1], ["record_type", "Upload"], ["name", "files"]]
+  [1m[36mActiveStorage::Blob Load (0.0ms)[0m  [1m[34mSELECT "active_storage_blobs".* FROM "active_storage_blobs" WHERE "active_storage_blobs"."id" = ? LIMIT ?[0m  [["id", 1], ["LIMIT", 1]]
+  Rendered collection of uploads/_upload.html.erb [1 times] (Duration: 10.3ms | GC: 0.1ms)
+  Rendered uploads/index.html.erb within layouts/application (Duration: 11.5ms | GC: 0.3ms)
+  Rendered layout layouts/application.html.erb (Duration: 11.8ms | GC: 0.3ms)
+Completed 200 OK in 13ms (Views: 11.9ms | ActiveRecord: 0.1ms (3 queries, 0 cached) | GC: 0.3ms)
+  [1m[36mUpload Load (0.1ms)[0m  [1m[34mSELECT "uploads".* FROM "uploads" ORDER BY "uploads"."id" DESC LIMIT ?[0m  [["LIMIT", 1]]
+  [1m[36mActiveStorage::Attachment Load (0.2ms)[0m  [1m[34mSELECT "active_storage_attachments".* FROM "active_storage_attachments" WHERE "active_storage_attachments"."record_id" = ? AND "active_storage_attachments"."record_type" = ? AND "active_storage_attachments"."name" = ? ORDER BY "active_storage_attachments"."id" ASC LIMIT ?[0m  [["record_id", 1], ["record_type", "Upload"], ["name", "files"], ["LIMIT", 1]]
+  [1m[36mActiveStorage::Blob Load (0.0ms)[0m  [1m[34mSELECT "active_storage_blobs".* FROM "active_storage_blobs" WHERE "active_storage_blobs"."id" = ? LIMIT ?[0m  [["id", 1], ["LIMIT", 1]]
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[31mROLLBACK TRANSACTION[0m
+[36m  S3 Storage (16.4ms) [0m[31mDeleted files by key prefix: [0m
+.  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mBEGIN deferred TRANSACTION[0m
+---------------------------------------------------
+UploadsTest: test_smaller_than_5MB_multipart_upload
+---------------------------------------------------
+Started GET "/?multipart_upload=true" for 127.0.0.1 at 2025-08-02 17:17:57 +0100
+Processing by UploadsController#new as HTML
+  Parameters: {"multipart_upload" => "true"}
+  Rendering layout layouts/application.html.erb
+  Rendering uploads/new.html.erb within layouts/application
+  Rendered uploads/new.html.erb within layouts/application (Duration: 1.9ms | GC: 0.0ms)
+  Rendered layout layouts/application.html.erb (Duration: 2.5ms | GC: 0.0ms)
+Completed 200 OK in 3ms (Views: 2.7ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+[JS console.debug] DirectUploadsController#startNextController
+Started POST "/rails/active_storage/direct_uploads" for 127.0.0.1 at 2025-08-02 17:17:58 +0100
+Processing by ActiveStorage::DirectUploadsController#create as JSON
+  Parameters: {"blob" => {"filename" => "suzanne-1.2m.blend", "content_type" => "application/octet-stream", "byte_size" => 1310538, "checksum" => nil}, "direct_upload" => {"blob" => {"filename" => "suzanne-1.2m.blend", "content_type" => "application/octet-stream", "byte_size" => 1310538, "checksum" => nil}}}
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mSAVEPOINT active_record_1[0m
+  [1m[36mActiveStorage::Blob Create (0.6ms)[0m  [1m[32mINSERT INTO "active_storage_blobs" ("byte_size", "checksum", "content_type", "created_at", "filename", "key", "metadata", "service_name") VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING "id"[0m  [["byte_size", 1310538], ["checksum", nil], ["content_type", "application/octet-stream"], ["created_at", "2025-08-02 16:17:58.062621"], ["filename", "suzanne-1.2m.blend"], ["key", "rgdnfq1r2jzlsqvke7xpfmppztnp"], ["metadata", nil], ["service_name", "localstack"]]
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mRELEASE SAVEPOINT active_record_1[0m
+[JS console.debug] BlobRecord#create (sending to the server)
+Multipart with 1 parts of size 1310538
+[36m  S3 Storage (0.7ms) [0m[34mGenerated URL for file at key: rgdnfq1r2jzlsqvke7xpfmppztnp (http://localhost:4566/rails-multipart-direct-uploads/rgdnfq1r2jzlsqvke7xpfmppztnp?partNumber=1&uploadId=aLVcHQFaMbjZEZrAVb-E-gz38LiecsTjPpIKl5kojrmjEmdWuS5YLjtDdZWyt0X1ZOrIzvfmar5PDLhok1479tg7wPe9dm2XfdMnTVNVjPp5VCuPVlUrehKcJPErIYxq&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=test%2F20250802%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250802T161758Z&X-Amz-Expires=300&X-Amz-SignedHeaders=host&X-Amz-Signature=0bcaa2432aa2a0da00efbc0fcb00b6f5dc969b49a88f05e5a570b6bbf8fa68cf)[0m
+Completed 200 OK in 18ms (Views: 0.1ms | ActiveRecord: 0.6ms (1 query, 0 cached) | GC: 0.0ms)
+[JS console.debug] BlobRecord response: Object(11)
+[[["id", {"type" => "number", "value" => 1}],
+  ["byte_size", {"type" => "number", "value" => 1310538}],
+  ["checksum", {"type" => "null"}],
+  ["content_type",
+   {"type" => "string", "value" => "application/octet-stream"}],
+  ["created_at", {"type" => "string", "value" => "2025-08-02T16:17:58.062Z"}],
+  ["filename", {"type" => "string", "value" => "suzanne-1.2m.blend"}],
+  ["key", {"type" => "string", "value" => "rgdnfq1r2jzlsqvke7xpfmppztnp"}],
+  ["metadata", {"type" => "object", "value" => []}],
+  ["service_name", {"type" => "string", "value" => "localstack"}],
+  ["attachable_sgid",
+   {"type" => "string",
+    "value" =>
+     "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL3JhaWxzLW11bHRpcGFydC1kaXJlY3QtdXBsb2Fkcy9BY3RpdmVTdG9yYWdlOjpCbG9iLzE_ZXhwaXJlc19pbiIsInB1ciI6ImF0dGFjaGFibGUifX0=--8a7382e9090b41514e27c309fa30edf3d5733367"}],
+  ["signed_id",
+   {"type" => "string",
+    "value" =>
+     "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoiYmxvYl9pZCJ9fQ==--1ac8f89416a05d1fb99635df6ea3a97115f6a2e2"}]]]
+[JS console.debug] Part 1/1 starting
+Started PUT "/rails/active_storage/direct_uploads/1" for 127.0.0.1 at 2025-08-02 17:17:58 +0100
+Processing by ActiveStorage::DirectUploadsController#update as */*
+  Parameters: {"blob" => {"upload_id" => "aLVcHQFaMbjZEZrAVb-E-gz38LiecsTjPpIKl5kojrmjEmdWuS5YLjtDdZWyt0X1ZOrIzvfmar5PDLhok1479tg7wPe9dm2XfdMnTVNVjPp5VCuPVlUrehKcJPErIYxq", "parts" => [{"etag" => "\"c21ac89bf079783803ade9c697671fc4\"", "part_number" => 1}]}, "id" => "1", "direct_upload" => {"blob" => {"upload_id" => "aLVcHQFaMbjZEZrAVb-E-gz38LiecsTjPpIKl5kojrmjEmdWuS5YLjtDdZWyt0X1ZOrIzvfmar5PDLhok1479tg7wPe9dm2XfdMnTVNVjPp5VCuPVlUrehKcJPErIYxq", "parts" => [{"etag" => "\"c21ac89bf079783803ade9c697671fc4\"", "part_number" => 1}]}}}
+  [1m[36mActiveStorage::Blob Load (0.1ms)[0m  [1m[34mSELECT "active_storage_blobs".* FROM "active_storage_blobs" WHERE "active_storage_blobs"."id" = ? LIMIT ?[0m  [["id", 1], ["LIMIT", 1]]
+[JS console.debug] Part 1/1 uploaded
+[JS console.debug] All parts uploaded, completing multipart upload
+Completed 200 OK in 4ms (ActiveRecord: 0.1ms (1 query, 0 cached) | GC: 0.0ms)
+Started POST "/uploads" for 127.0.0.1 at 2025-08-02 17:17:58 +0100
+Processing by UploadsController#create as TURBO_STREAM
+  Parameters: {"upload" => {"files" => ["", "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoiYmxvYl9pZCJ9fQ==--1ac8f89416a05d1fb99635df6ea3a97115f6a2e2"]}, "commit" => "Create Upload"}
+  [1m[36mActiveStorage::Blob Load (0.1ms)[0m  [1m[34mSELECT "active_storage_blobs".* FROM "active_storage_blobs" WHERE "active_storage_blobs"."id" = ? LIMIT ?[0m  [["id", 1], ["LIMIT", 1]]
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mSAVEPOINT active_record_1[0m
+  [1m[36mUpload Create (0.2ms)[0m  [1m[32mINSERT INTO "uploads" ("created_at", "updated_at") VALUES (?, ?) RETURNING "id"[0m  [["created_at", "2025-08-02 16:17:58.117959"], ["updated_at", "2025-08-02 16:17:58.117959"]]
   [1m[36mActiveStorage::Blob Update (0.1ms)[0m  [1m[33mUPDATE "active_storage_blobs" SET "metadata" = ? WHERE "active_storage_blobs"."id" = ?[0m  [["metadata", "{\"identified\":true}"], ["id", 1]]
   [1m[36mActiveStorage::Attachment Load (0.2ms)[0m  [1m[34mSELECT "active_storage_attachments".* FROM "active_storage_attachments" WHERE "active_storage_attachments"."blob_id" = ?[0m  [["blob_id", 1]]
-  [1m[36mActiveStorage::Attachment Create (0.1ms)[0m  [1m[32mINSERT INTO "active_storage_attachments" ("blob_id", "created_at", "name", "record_id", "record_type") VALUES (?, ?, ?, ?, ?) RETURNING "id"[0m  [["blob_id", 1], ["created_at", "2025-08-02 15:56:13.407368"], ["name", "files"], ["record_id", 1], ["record_type", "Upload"]]
-  [1m[36mUpload Update (0.0ms)[0m  [1m[33mUPDATE "uploads" SET "updated_at" = ? WHERE "uploads"."id" = ?[0m  [["updated_at", "2025-08-02 15:56:13.409278"], ["id", 1]]
+  [1m[36mActiveStorage::Attachment Create (0.1ms)[0m  [1m[32mINSERT INTO "active_storage_attachments" ("blob_id", "created_at", "name", "record_id", "record_type") VALUES (?, ?, ?, ?, ?) RETURNING "id"[0m  [["blob_id", 1], ["created_at", "2025-08-02 16:17:58.133395"], ["name", "files"], ["record_id", 1], ["record_type", "Upload"]]
+  [1m[36mUpload Update (0.0ms)[0m  [1m[33mUPDATE "uploads" SET "updated_at" = ? WHERE "uploads"."id" = ?[0m  [["updated_at", "2025-08-02 16:17:58.135191"], ["id", 1]]
   [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mRELEASE SAVEPOINT active_record_1[0m
   [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mSAVEPOINT active_record_1[0m
   [1m[36mActiveStorage::Blob Update (0.2ms)[0m  [1m[33mUPDATE "active_storage_blobs" SET "metadata" = ? WHERE "active_storage_blobs"."id" = ?[0m  [["metadata", "{\"identified\":true,\"analyzed\":true}"], ["id", 1]]
   [1m[36mActiveStorage::Attachment Load (0.0ms)[0m  [1m[34mSELECT "active_storage_attachments".* FROM "active_storage_attachments" WHERE "active_storage_attachments"."blob_id" = ?[0m  [["blob_id", 1]]
   [1m[36mUpload Load (0.7ms)[0m  [1m[34mSELECT "uploads".* FROM "uploads" WHERE "uploads"."id" = ?[0m  [["id", 1]]
-  [1m[36mUpload Update (0.0ms)[0m  [1m[33mUPDATE "uploads" SET "updated_at" = ? WHERE "uploads"."id" = ?[0m  [["updated_at", "2025-08-02 15:56:13.417218"], ["id", 1]]
+  [1m[36mUpload Update (0.0ms)[0m  [1m[33mUPDATE "uploads" SET "updated_at" = ? WHERE "uploads"."id" = ?[0m  [["updated_at", "2025-08-02 16:17:58.144692"], ["id", 1]]
   [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mRELEASE SAVEPOINT active_record_1[0m
-Redirected to http://127.0.0.1:63076/uploads
-Completed 302 Found in 36ms (ActiveRecord: 1.8ms (10 queries, 0 cached) | GC: 0.0ms)
-Started GET "/uploads" for 127.0.0.1 at 2025-08-02 16:56:13 +0100
+Redirected to http://127.0.0.1:52603/uploads
+Completed 302 Found in 36ms (ActiveRecord: 1.6ms (10 queries, 0 cached) | GC: 0.0ms)
+Started GET "/uploads" for 127.0.0.1 at 2025-08-02 17:17:58 +0100
 Processing by UploadsController#index as TURBO_STREAM
   Rendering layout layouts/application.html.erb
   Rendering uploads/index.html.erb within layouts/application
   [1m[36mUpload Load (0.0ms)[0m  [1m[34mSELECT "uploads".* FROM "uploads"[0m
   [1m[36mActiveStorage::Attachment Load (0.1ms)[0m  [1m[34mSELECT "active_storage_attachments".* FROM "active_storage_attachments" WHERE "active_storage_attachments"."record_id" = ? AND "active_storage_attachments"."record_type" = ? AND "active_storage_attachments"."name" = ?[0m  [["record_id", 1], ["record_type", "Upload"], ["name", "files"]]
-  [1m[36mActiveStorage::Blob Load (0.3ms)[0m  [1m[34mSELECT "active_storage_blobs".* FROM "active_storage_blobs" WHERE "active_storage_blobs"."id" = ? LIMIT ?[0m  [["id", 1], ["LIMIT", 1]]
-  Rendered collection of uploads/_upload.html.erb [1 times] (Duration: 12.8ms | GC: 0.0ms)
-  Rendered uploads/index.html.erb within layouts/application (Duration: 14.2ms | GC: 0.0ms)
-  Rendered layout layouts/application.html.erb (Duration: 15.1ms | GC: 0.0ms)
-Completed 200 OK in 16ms (Views: 15.0ms | ActiveRecord: 0.5ms (3 queries, 0 cached) | GC: 0.0ms)
+  [1m[36mActiveStorage::Blob Load (0.2ms)[0m  [1m[34mSELECT "active_storage_blobs".* FROM "active_storage_blobs" WHERE "active_storage_blobs"."id" = ? LIMIT ?[0m  [["id", 1], ["LIMIT", 1]]
+  Rendered collection of uploads/_upload.html.erb [1 times] (Duration: 15.0ms | GC: 0.0ms)
+  Rendered uploads/index.html.erb within layouts/application (Duration: 16.3ms | GC: 0.0ms)
+  Rendered layout layouts/application.html.erb (Duration: 16.9ms | GC: 0.0ms)
+Completed 200 OK in 18ms (Views: 16.9ms | ActiveRecord: 0.4ms (3 queries, 0 cached) | GC: 0.0ms)
   [1m[36mUpload Load (0.1ms)[0m  [1m[34mSELECT "uploads".* FROM "uploads" ORDER BY "uploads"."id" DESC LIMIT ?[0m  [["LIMIT", 1]]
   [1m[36mActiveStorage::Attachment Load (0.1ms)[0m  [1m[34mSELECT "active_storage_attachments".* FROM "active_storage_attachments" WHERE "active_storage_attachments"."record_id" = ? AND "active_storage_attachments"."record_type" = ? AND "active_storage_attachments"."name" = ? ORDER BY "active_storage_attachments"."id" ASC LIMIT ?[0m  [["record_id", 1], ["record_type", "Upload"], ["name", "files"], ["LIMIT", 1]]
   [1m[36mActiveStorage::Blob Load (0.0ms)[0m  [1m[34mSELECT "active_storage_blobs".* FROM "active_storage_blobs" WHERE "active_storage_blobs"."id" = ? LIMIT ?[0m  [["id", 1], ["LIMIT", 1]]
   [1m[36mTRANSACTION (0.1ms)[0m  [1m[31mROLLBACK TRANSACTION[0m
-[36m  S3 Storage (14.2ms) [0m[31mDeleted files by key prefix: [0m
+[36m  S3 Storage (13.2ms) [0m[31mDeleted files by key prefix: [0m
 .  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mBEGIN deferred TRANSACTION[0m
 ------------------------------------
 UploadsTest: test_single_part_upload
 ------------------------------------
-Started GET "/" for 127.0.0.1 at 2025-08-02 16:56:13 +0100
+Started GET "/" for 127.0.0.1 at 2025-08-02 17:17:58 +0100
 Processing by UploadsController#new as HTML
   Rendering layout layouts/application.html.erb
   Rendering uploads/new.html.erb within layouts/application
   Rendered uploads/new.html.erb within layouts/application (Duration: 1.2ms | GC: 0.0ms)
-  Rendered layout layouts/application.html.erb (Duration: 2.1ms | GC: 0.0ms)
-Completed 200 OK in 5ms (Views: 2.9ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+  Rendered layout layouts/application.html.erb (Duration: 2.0ms | GC: 0.0ms)
+Completed 200 OK in 4ms (Views: 2.6ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
 [JS console.debug] DirectUploadsController#startNextController
 [JS console.debug] Calculated checksum in 0.3s
 [JS console.debug] BlobRecord#create (sending to the server)
-Started POST "/rails/active_storage/direct_uploads" for 127.0.0.1 at 2025-08-02 16:56:14 +0100
+Started POST "/rails/active_storage/direct_uploads" for 127.0.0.1 at 2025-08-02 17:17:59 +0100
 Processing by ActiveStorage::DirectUploadsController#create as JSON
   Parameters: {"blob" => {"filename" => "suzannes-25m.blend", "content_type" => "application/octet-stream", "byte_size" => 26180640, "checksum" => "Q+p1uHR6CkMd43OfAysDcw=="}, "direct_upload" => {"blob" => {"filename" => "suzannes-25m.blend", "content_type" => "application/octet-stream", "byte_size" => 26180640, "checksum" => "Q+p1uHR6CkMd43OfAysDcw=="}}}
   [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mSAVEPOINT active_record_1[0m
-  [1m[36mActiveStorage::Blob Create (35.6ms)[0m  [1m[32mINSERT INTO "active_storage_blobs" ("byte_size", "checksum", "content_type", "created_at", "filename", "key", "metadata", "service_name") VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING "id"[0m  [["byte_size", 26180640], ["checksum", "Q+p1uHR6CkMd43OfAysDcw=="], ["content_type", "application/octet-stream"], ["created_at", "2025-08-02 15:56:14.296698"], ["filename", "suzannes-25m.blend"], ["key", "zyij0cdvuxgw4yl4xtvx0fs3oao2"], ["metadata", nil], ["service_name", "localstack"]]
+  [1m[36mActiveStorage::Blob Create (0.2ms)[0m  [1m[32mINSERT INTO "active_storage_blobs" ("byte_size", "checksum", "content_type", "created_at", "filename", "key", "metadata", "service_name") VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING "id"[0m  [["byte_size", 26180640], ["checksum", "Q+p1uHR6CkMd43OfAysDcw=="], ["content_type", "application/octet-stream"], ["created_at", "2025-08-02 16:17:59.017125"], ["filename", "suzannes-25m.blend"], ["key", "clx3lo7any2rj21ajri80s26e3mj"], ["metadata", nil], ["service_name", "localstack"]]
   [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mRELEASE SAVEPOINT active_record_1[0m
-[36m  S3 Storage (2.2ms) [0m[34mGenerated URL for file at key: zyij0cdvuxgw4yl4xtvx0fs3oao2 (http://localhost:4566/rails-multipart-direct-uploads/zyij0cdvuxgw4yl4xtvx0fs3oao2?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=test%2F20250802%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250802T155614Z&X-Amz-Expires=300&X-Amz-SignedHeaders=content-length%3Bcontent-md5%3Bcontent-type%3Bhost&X-Amz-Signature=011d51258085eeb7ade7dc5b2df80678904290e43312ff9a989a5e12745c92c5)[0m
-Completed 200 OK in 42ms (Views: 0.1ms | ActiveRecord: 35.6ms (1 query, 0 cached) | GC: 0.3ms)
+[36m  S3 Storage (1.9ms) [0m[34mGenerated URL for file at key: clx3lo7any2rj21ajri80s26e3mj (http://localhost:4566/rails-multipart-direct-uploads/clx3lo7any2rj21ajri80s26e3mj?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=test%2F20250802%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250802T161759Z&X-Amz-Expires=300&X-Amz-SignedHeaders=content-length%3Bcontent-md5%3Bcontent-type%3Bhost&X-Amz-Signature=a27f8b1cc6c56c638aaaed696e6f35d791835f04a4ee233dc4f3c9d995e2c584)[0m
+Completed 200 OK in 5ms (Views: 0.1ms | ActiveRecord: 0.2ms (1 query, 0 cached) | GC: 0.0ms)
 [JS console.debug] BlobRecord response: Object(11)
 [[["id", {"type" => "number", "value" => 1}],
   ["byte_size", {"type" => "number", "value" => 26180640}],
   ["checksum", {"type" => "string", "value" => "Q+p1uHR6CkMd43OfAysDcw=="}],
   ["content_type",
    {"type" => "string", "value" => "application/octet-stream"}],
-  ["created_at", {"type" => "string", "value" => "2025-08-02T15:56:14.296Z"}],
+  ["created_at", {"type" => "string", "value" => "2025-08-02T16:17:59.017Z"}],
   ["filename", {"type" => "string", "value" => "suzannes-25m.blend"}],
-  ["key", {"type" => "string", "value" => "zyij0cdvuxgw4yl4xtvx0fs3oao2"}],
+  ["key", {"type" => "string", "value" => "clx3lo7any2rj21ajri80s26e3mj"}],
   ["metadata", {"type" => "object", "value" => []}],
   ["service_name", {"type" => "string", "value" => "localstack"}],
   ["attachable_sgid",
@@ -243,44 +243,44 @@ Completed 200 OK in 42ms (Views: 0.1ms | ActiveRecord: 35.6ms (1 query, 0 cached
     "value" =>
      "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoiYmxvYl9pZCJ9fQ==--1ac8f89416a05d1fb99635df6ea3a97115f6a2e2"}]]]
 [JS console.debug] BlobUpload#create (uploading to S3)
-Started POST "/uploads" for 127.0.0.1 at 2025-08-02 16:56:14 +0100
+Started POST "/uploads" for 127.0.0.1 at 2025-08-02 17:17:59 +0100
 Processing by UploadsController#create as TURBO_STREAM
   Parameters: {"upload" => {"files" => ["", "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoiYmxvYl9pZCJ9fQ==--1ac8f89416a05d1fb99635df6ea3a97115f6a2e2"]}, "commit" => "Create Upload"}
   [1m[36mActiveStorage::Blob Load (0.1ms)[0m  [1m[34mSELECT "active_storage_blobs".* FROM "active_storage_blobs" WHERE "active_storage_blobs"."id" = ? LIMIT ?[0m  [["id", 1], ["LIMIT", 1]]
   [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mSAVEPOINT active_record_1[0m
-  [1m[36mUpload Create (0.4ms)[0m  [1m[32mINSERT INTO "uploads" ("created_at", "updated_at") VALUES (?, ?) RETURNING "id"[0m  [["created_at", "2025-08-02 15:56:14.610172"], ["updated_at", "2025-08-02 15:56:14.610172"]]
+  [1m[36mUpload Create (0.4ms)[0m  [1m[32mINSERT INTO "uploads" ("created_at", "updated_at") VALUES (?, ?) RETURNING "id"[0m  [["created_at", "2025-08-02 16:17:59.299299"], ["updated_at", "2025-08-02 16:17:59.299299"]]
   [1m[36mActiveStorage::Blob Update (0.0ms)[0m  [1m[33mUPDATE "active_storage_blobs" SET "metadata" = ? WHERE "active_storage_blobs"."id" = ?[0m  [["metadata", "{\"identified\":true}"], ["id", 1]]
   [1m[36mActiveStorage::Attachment Load (0.0ms)[0m  [1m[34mSELECT "active_storage_attachments".* FROM "active_storage_attachments" WHERE "active_storage_attachments"."blob_id" = ?[0m  [["blob_id", 1]]
-  [1m[36mActiveStorage::Attachment Create (0.1ms)[0m  [1m[32mINSERT INTO "active_storage_attachments" ("blob_id", "created_at", "name", "record_id", "record_type") VALUES (?, ?, ?, ?, ?) RETURNING "id"[0m  [["blob_id", 1], ["created_at", "2025-08-02 15:56:14.614750"], ["name", "files"], ["record_id", 1], ["record_type", "Upload"]]
-  [1m[36mUpload Update (0.0ms)[0m  [1m[33mUPDATE "uploads" SET "updated_at" = ? WHERE "uploads"."id" = ?[0m  [["updated_at", "2025-08-02 15:56:14.616517"], ["id", 1]]
+  [1m[36mActiveStorage::Attachment Create (0.1ms)[0m  [1m[32mINSERT INTO "active_storage_attachments" ("blob_id", "created_at", "name", "record_id", "record_type") VALUES (?, ?, ?, ?, ?) RETURNING "id"[0m  [["blob_id", 1], ["created_at", "2025-08-02 16:17:59.304088"], ["name", "files"], ["record_id", 1], ["record_type", "Upload"]]
+  [1m[36mUpload Update (0.0ms)[0m  [1m[33mUPDATE "uploads" SET "updated_at" = ? WHERE "uploads"."id" = ?[0m  [["updated_at", "2025-08-02 16:17:59.305292"], ["id", 1]]
   [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mRELEASE SAVEPOINT active_record_1[0m
   [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mSAVEPOINT active_record_1[0m
-  [1m[36mActiveStorage::Blob Update (0.6ms)[0m  [1m[33mUPDATE "active_storage_blobs" SET "metadata" = ? WHERE "active_storage_blobs"."id" = ?[0m  [["metadata", "{\"identified\":true,\"analyzed\":true}"], ["id", 1]]
+  [1m[36mActiveStorage::Blob Update (0.2ms)[0m  [1m[33mUPDATE "active_storage_blobs" SET "metadata" = ? WHERE "active_storage_blobs"."id" = ?[0m  [["metadata", "{\"identified\":true,\"analyzed\":true}"], ["id", 1]]
   [1m[36mActiveStorage::Attachment Load (0.0ms)[0m  [1m[34mSELECT "active_storage_attachments".* FROM "active_storage_attachments" WHERE "active_storage_attachments"."blob_id" = ?[0m  [["blob_id", 1]]
   [1m[36mUpload Load (0.0ms)[0m  [1m[34mSELECT "uploads".* FROM "uploads" WHERE "uploads"."id" = ?[0m  [["id", 1]]
-  [1m[36mUpload Update (0.1ms)[0m  [1m[33mUPDATE "uploads" SET "updated_at" = ? WHERE "uploads"."id" = ?[0m  [["updated_at", "2025-08-02 15:56:14.622300"], ["id", 1]]
+  [1m[36mUpload Update (0.0ms)[0m  [1m[33mUPDATE "uploads" SET "updated_at" = ? WHERE "uploads"."id" = ?[0m  [["updated_at", "2025-08-02 16:17:59.310061"], ["id", 1]]
   [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mRELEASE SAVEPOINT active_record_1[0m
-Redirected to http://127.0.0.1:63076/uploads
-Completed 302 Found in 24ms (ActiveRecord: 1.4ms (10 queries, 0 cached) | GC: 0.4ms)
-Started GET "/uploads" for 127.0.0.1 at 2025-08-02 16:56:14 +0100
+Redirected to http://127.0.0.1:52603/uploads
+Completed 302 Found in 22ms (ActiveRecord: 0.9ms (10 queries, 0 cached) | GC: 0.0ms)
+Started GET "/uploads" for 127.0.0.1 at 2025-08-02 17:17:59 +0100
 Processing by UploadsController#index as TURBO_STREAM
   Rendering layout layouts/application.html.erb
   Rendering uploads/index.html.erb within layouts/application
   [1m[36mUpload Load (0.0ms)[0m  [1m[34mSELECT "uploads".* FROM "uploads"[0m
   [1m[36mActiveStorage::Attachment Load (0.0ms)[0m  [1m[34mSELECT "active_storage_attachments".* FROM "active_storage_attachments" WHERE "active_storage_attachments"."record_id" = ? AND "active_storage_attachments"."record_type" = ? AND "active_storage_attachments"."name" = ?[0m  [["record_id", 1], ["record_type", "Upload"], ["name", "files"]]
   [1m[36mActiveStorage::Blob Load (0.0ms)[0m  [1m[34mSELECT "active_storage_blobs".* FROM "active_storage_blobs" WHERE "active_storage_blobs"."id" = ? LIMIT ?[0m  [["id", 1], ["LIMIT", 1]]
-  Rendered collection of uploads/_upload.html.erb [1 times] (Duration: 2.5ms | GC: 0.0ms)
-  Rendered uploads/index.html.erb within layouts/application (Duration: 2.8ms | GC: 0.0ms)
-  Rendered layout layouts/application.html.erb (Duration: 3.2ms | GC: 0.2ms)
-Completed 200 OK in 4ms (Views: 3.3ms | ActiveRecord: 0.1ms (3 queries, 0 cached) | GC: 0.2ms)
-  [1m[36mUpload Load (0.0ms)[0m  [1m[34mSELECT "uploads".* FROM "uploads" ORDER BY "uploads"."id" DESC LIMIT ?[0m  [["LIMIT", 1]]
+  Rendered collection of uploads/_upload.html.erb [1 times] (Duration: 2.2ms | GC: 0.0ms)
+  Rendered uploads/index.html.erb within layouts/application (Duration: 2.4ms | GC: 0.0ms)
+  Rendered layout layouts/application.html.erb (Duration: 2.7ms | GC: 0.0ms)
+Completed 200 OK in 3ms (Views: 2.8ms | ActiveRecord: 0.1ms (3 queries, 0 cached) | GC: 0.0ms)
+  [1m[36mUpload Load (0.1ms)[0m  [1m[34mSELECT "uploads".* FROM "uploads" ORDER BY "uploads"."id" DESC LIMIT ?[0m  [["LIMIT", 1]]
   [1m[36mActiveStorage::Attachment Load (0.2ms)[0m  [1m[34mSELECT "active_storage_attachments".* FROM "active_storage_attachments" WHERE "active_storage_attachments"."record_id" = ? AND "active_storage_attachments"."record_type" = ? AND "active_storage_attachments"."name" = ? ORDER BY "active_storage_attachments"."id" ASC LIMIT ?[0m  [["record_id", 1], ["record_type", "Upload"], ["name", "files"], ["LIMIT", 1]]
   [1m[36mActiveStorage::Blob Load (0.0ms)[0m  [1m[34mSELECT "active_storage_blobs".* FROM "active_storage_blobs" WHERE "active_storage_blobs"."id" = ? LIMIT ?[0m  [["id", 1], ["LIMIT", 1]]
   [1m[36mTRANSACTION (0.1ms)[0m  [1m[31mROLLBACK TRANSACTION[0m
-[36m  S3 Storage (14.7ms) [0m[31mDeleted files by key prefix: [0m
+[36m  S3 Storage (28.8ms) [0m[31mDeleted files by key prefix: [0m
 .
 
-Finished in 4.331700s, 0.6926 runs/s, 2.0777 assertions/s.
+Finished in 4.493692s, 0.6676 runs/s, 2.0028 assertions/s.
 3 runs, 9 assertions, 0 failures, 0 errors, 0 skips
 
 
