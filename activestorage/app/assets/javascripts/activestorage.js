@@ -697,81 +697,39 @@
       this.delegate = delegate;
       this.customHeaders = customHeaders;
       this.useMultipart = useMultipart;
-      console.debug("Using Multipart:", this.useMultipart);
     }
     create(callback) {
+      this.maybeGetChecksum(((error, checksum) => {
+        if (error) return callback(error);
+        this.createBlobRecord(checksum, ((error, blobRecord) => {
+          if (error) return callback(error);
+          this.uploadToService(blobRecord, callback);
+        }));
+      }));
+    }
+    maybeGetChecksum(callback) {
       if (this.useMultipart) {
-        const blobRecord = new BlobRecord(this.file, null, this.url, this.customHeaders);
-        notify(this.delegate, "directUploadWillCreateBlobWithXHR", blobRecord.xhr);
-        blobRecord.create((error => {
-          if (error) {
-            callback(error);
-          } else {
-            this.handleBlobUpload(blobRecord, callback);
-          }
-        }));
+        callback(null, null);
       } else {
-        FileChecksum.create(this.file, ((error, checksum) => {
-          if (error) {
-            callback(error);
-            return;
-          }
-          const blobRecord = new BlobRecord(this.file, checksum, this.url, this.customHeaders);
-          notify(this.delegate, "directUploadWillCreateBlobWithXHR", blobRecord.xhr);
-          blobRecord.create((error => {
-            if (error) {
-              callback(error);
-            } else {
-              const {directUploadData: directUploadData} = blobRecord;
-              if (directUploadData.upload_id) {
-                const multipartUpload = new MultipartBlobUpload(blobRecord);
-                notify(this.delegate, "directUploadWillStoreFileWithXHR", multipartUpload.xhr);
-                multipartUpload.create((error => {
-                  if (error) {
-                    callback(error);
-                  } else {
-                    callback(null, blobRecord.toJSON());
-                  }
-                }));
-              } else {
-                const blobUpload = new BlobUpload(blobRecord);
-                notify(this.delegate, "directUploadWillStoreFileWithXHR", blobUpload.xhr);
-                blobUpload.create((error => {
-                  if (error) {
-                    callback(error);
-                  } else {
-                    callback(null, blobRecord.toJSON());
-                  }
-                }));
-              }
-            }
-          }));
-        }));
+        FileChecksum.create(this.file, callback);
       }
     }
-    handleBlobUpload(blobRecord, callback) {
-      const {directUploadData: directUploadData} = blobRecord;
-      if (directUploadData.upload_id) {
-        const multipartUpload = new MultipartBlobUpload(blobRecord);
-        notify(this.delegate, "directUploadWillStoreFileWithXHR", multipartUpload.xhr);
-        multipartUpload.create((error => {
-          if (error) {
-            callback(error);
-          } else {
-            callback(null, blobRecord.toJSON());
-          }
-        }));
-      } else {
-        const blobUpload = new BlobUpload(blobRecord);
-        notify(this.delegate, "directUploadWillStoreFileWithXHR", blobUpload.xhr);
-        blobUpload.create((error => {
-          if (error) {
-            callback(error);
-          } else {
-            callback(null, blobRecord.toJSON());
-          }
-        }));
-      }
+    createBlobRecord(checksum, callback) {
+      const blobRecord = new BlobRecord(this.file, checksum, this.url, this.customHeaders);
+      notify(this.delegate, "directUploadWillCreateBlobWithXHR", blobRecord.xhr);
+      blobRecord.create((error => callback(error, blobRecord)));
+    }
+    uploadToService(blobRecord, callback) {
+      const UploadClass = this.useMultipart ? MultipartBlobUpload : BlobUpload;
+      const upload = new UploadClass(blobRecord);
+      notify(this.delegate, "directUploadWillStoreFileWithXHR", upload.xhr);
+      upload.create((error => {
+        if (error) {
+          callback(error);
+        } else {
+          callback(null, blobRecord.toJSON());
+        }
+      }));
     }
   }
   function notify(object, methodName, ...messages) {
