@@ -1138,24 +1138,45 @@ class MultipartBlobUpload {
       }));
     }));
   }
-  uploadPart(url, chunk, callback) {
+  uploadPart(url, chunk, callback, attempt = 1) {
+    const maxRetries = 5;
+    const baseDelay = 1e3;
     const xhr = new XMLHttpRequest;
     xhr.open("PUT", url, true);
     xhr.responseType = "text";
     xhr.addEventListener("load", (() => {
       if (xhr.status >= 200 && xhr.status < 300) {
         callback(null, xhr.getResponseHeader("ETag"));
+      } else if (attempt < maxRetries && this.isRetryableStatus(xhr.status)) {
+        const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 1e3;
+        console.debug(`Part upload failed with status ${xhr.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+        setTimeout((() => {
+          this.uploadPart(url, chunk, callback, attempt + 1);
+        }), delay);
       } else {
         callback(new Error(`Failed to upload part: ${xhr.status}`));
       }
     }));
     xhr.addEventListener("error", (() => {
-      callback(new Error("Network error"));
+      if (attempt < maxRetries) {
+        const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 1e3;
+        console.debug(`Part upload network error, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+        setTimeout((() => {
+          this.uploadPart(url, chunk, callback, attempt + 1);
+        }), delay);
+      } else {
+        callback(new Error("Network error"));
+      }
     }));
     xhr.send(chunk);
   }
-  completeMultipartUpload() {
+  isRetryableStatus(status) {
+    return status >= 500 || status === 408 || status === 429;
+  }
+  completeMultipartUpload(attempt = 0) {
     this.uploadedParts.sort(((a, b) => a.part_number - b.part_number));
+    const maxRetries = 5;
+    const baseDelay = 1e3;
     const xhr = new XMLHttpRequest;
     const completeUrl = `/rails/active_storage/direct_uploads/${this.blobId}`;
     xhr.open("PUT", completeUrl, true);
@@ -1164,8 +1185,25 @@ class MultipartBlobUpload {
     xhr.addEventListener("load", (() => {
       if (xhr.status >= 200 && xhr.status < 300) {
         this.callback(null, this.file);
+      } else if (attempt < maxRetries && this.isRetryableStatus(xhr.status)) {
+        const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 1e3;
+        console.debug(`Complete multipart upload failed with status ${xhr.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+        setTimeout((() => {
+          this.completeMultipartUpload(attempt + 1);
+        }), delay);
       } else {
         this.callback(new Error("Failed to complete multipart upload"));
+      }
+    }));
+    xhr.addEventListener("error", (() => {
+      if (attempt < maxRetries) {
+        const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 1e3;
+        console.debug(`Complete multipart upload network error, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+        setTimeout((() => {
+          this.completeMultipartUpload(attempt + 1);
+        }), delay);
+      } else {
+        this.callback(new Error("Network error completing multipart upload"));
       }
     }));
     xhr.send(JSON.stringify({
