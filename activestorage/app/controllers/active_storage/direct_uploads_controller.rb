@@ -25,25 +25,33 @@ class ActiveStorage::DirectUploadsController < ActiveStorage::BaseController
     end
 
     def direct_upload_json(blob)
-      if blob.service.respond_to?(:multipart_upload_threshold) && blob.byte_size >= blob.service.multipart_upload_threshold
-        multipart_direct_upload_json(blob)
-      else
+      if blob.checksum.present?
         single_part_direct_upload_json(blob)
+      else
+        multipart_direct_upload_json(blob)
       end
     end
 
-    MINIMUM_UPLOAD_PART_SIZE = 5.megabytes
+    def single_part_direct_upload_json(blob)
+      blob.as_json(root: false, methods: :signed_id).merge(direct_upload: {
+        url: blob.service_url_for_direct_upload,
+        headers: blob.service_headers_for_direct_upload
+      })
+    end
 
     def multipart_direct_upload_json(blob)
       upload_id = blob.service_initiate_multipart_upload
       part_count = (Math.sqrt(blob.byte_size / 1.megabyte) / 3).ceil
-      part_size = [blob.byte_size.fdiv(part_count).ceil, MINIMUM_UPLOAD_PART_SIZE].max
-      logger.debug "Using multipart upload :D with #{part_count} parts of size #{part_size}"
+      part_size = blob.byte_size.fdiv(part_count).ceil
+      logger.debug "Multipart with #{part_count} parts of size #{part_size}"
 
       part_urls = (1..part_count).map do |part_number|
         {
           part_number: part_number,
-          url: blob.service_part_url_for_direct_upload(upload_id: upload_id, part_number: part_number)
+          url: blob.service_part_url_for_direct_upload(
+            upload_id: upload_id,
+            part_number: part_number
+          )
         }
       end
 
@@ -51,13 +59,6 @@ class ActiveStorage::DirectUploadsController < ActiveStorage::BaseController
         upload_id: upload_id,
         part_size: part_size,
         part_urls: part_urls
-      })
-    end
-
-    def single_part_direct_upload_json(blob)
-      blob.as_json(root: false, methods: :signed_id).merge(direct_upload: {
-        url: blob.service_url_for_direct_upload,
-        headers: blob.service_headers_for_direct_upload
       })
     end
 end
