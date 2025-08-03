@@ -6,14 +6,14 @@ import { MultipartBlobUpload } from "./multipart_blob_upload"
 let id = 0
 
 export class DirectUpload {
-  constructor(file, url, delegate, customHeaders = {}, checksum_algorithm = "md5", useMultipart = false) {
+  constructor(file, url, delegate, customHeaders = {}, options = {}) {
     this.id = ++id
     this.file = file
     this.url = url
     this.delegate = delegate
     this.customHeaders = customHeaders
-    this.checksum_algorithm = checksum_algorithm.toLowerCase()
-    this.useMultipart = useMultipart
+    this.checksum_algorithm = (options.algorithm || "md5").toLowerCase()
+    this.useMultipart = !!options.useMultipart
   }
 
   create(callback) {
@@ -23,7 +23,7 @@ export class DirectUpload {
       this.createBlobRecord(checksum, (error, blobRecord) => {
         if (error) return callback(error)
 
-        this.uploadToService(blobRecord, callback)
+        this.createBlobUpload(blobRecord, callback)
       })
     })
   }
@@ -38,12 +38,12 @@ export class DirectUpload {
   }
 
   createBlobRecord(checksum, callback) {
-    const blobRecord = new BlobRecord(this.file, checksum, this.url, this.customHeaders)
+    const blobRecord = new BlobRecord(this.file, checksum, this.url)
     notify(this.delegate, "directUploadWillCreateBlobWithXHR", blobRecord.xhr)
     blobRecord.create(error => callback(error, blobRecord))
   }
 
-  uploadToService(blobRecord, callback) {
+  createBlobUpload(blobRecord, callback) {
     const UploadClass = this.useMultipart ? MultipartBlobUpload : BlobUpload
     const upload = new UploadClass(blobRecord)
 
