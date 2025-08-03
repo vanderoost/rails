@@ -24,8 +24,6 @@ export class DirectUploadsController {
   }
 
   uploadControllersConcurrently(controllers, callback) {
-    console.debug("DirectUploadsController#startNextController")
-
     this.uploadControllersWithConcurrencyLimit(controllers, this.maxConcurrentUploads)
       .then(() => {
         callback()
