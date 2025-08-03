@@ -17,7 +17,7 @@ class ActiveStorage::DirectUploadsController < ActiveStorage::BaseController
 
   private
     def blob_args
-      params.expect(blob: [:filename, :byte_size, :checksum, :content_type, metadata: {}]).to_h.symbolize_keys
+      params.expect(blob: [:filename, :byte_size, :checksum, :content_type, :key_prefix, :keep_filename, metadata: {}]).to_h.symbolize_keys
     end
 
     def complete_multipart_args

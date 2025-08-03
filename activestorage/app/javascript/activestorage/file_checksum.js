@@ -19,7 +19,6 @@ export class FileChecksum {
   }
 
   create(callback) {
-    this.debugStartTime = performance.now()
     this.callback = callback
     this.md5Buffer = new SparkMD5.ArrayBuffer
     this.fileReader = new FileReader
@@ -34,8 +33,6 @@ export class FileChecksum {
     if (!this.readNextChunk()) {
       const binaryDigest = this.md5Buffer.end(true)
       const base64digest = btoa(binaryDigest)
-      const runTime = (performance.now() - this.debugStartTime) / 1000
-      console.debug(`Calculated checksum in ${runTime.toFixed(1)}s`)
       this.callback(null, base64digest)
     }
   }

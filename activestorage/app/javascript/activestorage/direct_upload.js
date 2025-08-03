@@ -12,7 +12,11 @@ export class DirectUpload {
     this.url = url
     this.delegate = delegate
     this.customHeaders = customHeaders
-    this.useMultipart = !!options.useMultipart
+    this.customAttributes = {
+      key_prefix: options.keyPrefix || "",
+      keep_filename: options.keepFilename || false
+    }
+    this.useMultipart = options.useMultipart || false
   }
 
   create(callback) {
@@ -36,7 +40,7 @@ export class DirectUpload {
   }
 
   createBlobRecord(checksum, callback) {
-    const blobRecord = new BlobRecord(this.file, checksum, this.url)
+    const blobRecord = new BlobRecord(this.file, checksum, this.url, this.customHeaders, this.customAttributes)
     notify(this.delegate, "directUploadWillCreateBlobWithXHR", blobRecord.xhr)
     blobRecord.create(error => callback(error, blobRecord))
   }
