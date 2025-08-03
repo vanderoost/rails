@@ -877,7 +877,6 @@ class FileChecksum {
     this.checksum_algorithm = (options.algorithm || "md5").toLowerCase();
   }
   create(callback) {
-    this.debugStartTime = performance.now();
     this.callback = callback;
     const algorithmConfig = CHECKSUM_ALGORITHMS[this.checksum_algorithm];
     if (algorithmConfig) {
@@ -968,7 +967,7 @@ function toArray(value) {
 }
 
 class BlobRecord {
-  constructor(file, checksum, url, customHeaders = {}) {
+  constructor(file, checksum, url, customHeaders = {}, customAttributes = {}) {
     this.file = file;
     this.attributes = {
       filename: file.name,
@@ -976,6 +975,9 @@ class BlobRecord {
       byte_size: file.size,
       checksum: checksum
     };
+    Object.keys(customAttributes).forEach((attributeKey => {
+      this.attributes[attributeKey] = customAttributes[attributeKey];
+    }));
     this.xhr = new XMLHttpRequest;
     this.xhr.open("POST", url, true);
     this.xhr.responseType = "json";
@@ -1255,6 +1257,10 @@ class DirectUpload {
     this.delegate = delegate;
     this.customHeaders = customHeaders;
     this.checksum_algorithm = (options.algorithm || "md5").toLowerCase();
+    this.customAttributes = {
+      key_prefix: options.keyPrefix || "",
+      keep_filename: options.keepFilename || false
+    };
     this.useMultipart = !!options.useMultipart;
   }
   create(callback) {
@@ -1277,7 +1283,7 @@ class DirectUpload {
     }
   }
   createBlobRecord(checksum, callback) {
-    const blobRecord = new BlobRecord(this.file, checksum, this.url);
+    const blobRecord = new BlobRecord(this.file, checksum, this.url, this.customHeaders, this.customAttributes);
     notify(this.delegate, "directUploadWillCreateBlobWithXHR", blobRecord.xhr);
     blobRecord.create((error => callback(error, blobRecord)));
   }
@@ -1308,6 +1314,8 @@ class DirectUploadController {
     const customHeaders = {};
     const options = {
       algorithm: this.input.getAttribute("data-checksum-algorithm") || "md5",
+      keyPrefix: this.keyPrefix,
+      keepFilename: this.keepFilename,
       useMultipart: this.useMultipart
     };
     this.directUpload = new DirectUpload(this.file, this.url, this, customHeaders, options);
@@ -1341,8 +1349,14 @@ class DirectUploadController {
   get url() {
     return this.input.getAttribute("data-direct-upload-url");
   }
+  get keyPrefix() {
+    return this.input.getAttribute("data-key-prefix");
+  }
+  get keepFilename() {
+    return this.input.getAttribute("data-keep-filename") === "true";
+  }
   get useMultipart() {
-    return this.input.getAttribute("data-multipart-upload") === "true";
+    return this.input.getAttribute("data-use-multipart") === "true";
   }
   dispatch(name, detail = {}) {
     detail.file = this.file;
@@ -1427,7 +1441,6 @@ class DirectUploadsController {
     this.uploadControllersConcurrently(controllers, callback);
   }
   uploadControllersConcurrently(controllers, callback) {
-    console.debug("DirectUploadsController#startNextController");
     this.uploadControllersWithConcurrencyLimit(controllers, this.maxConcurrentUploads).then((() => {
       callback();
       this.dispatch("end");

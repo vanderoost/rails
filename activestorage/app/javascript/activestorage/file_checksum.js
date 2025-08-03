@@ -23,7 +23,6 @@ export class FileChecksum {
   }
 
   create(callback) {
-    this.debugStartTime = performance.now()
     this.callback = callback
 
     const algorithmConfig = CHECKSUM_ALGORITHMS[this.checksum_algorithm]
