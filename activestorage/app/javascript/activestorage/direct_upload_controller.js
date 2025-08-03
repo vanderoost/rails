@@ -5,8 +5,9 @@ export class DirectUploadController {
   constructor(input, file) {
     this.input = input
     this.file = file
-    this.useMultipart = this.input.dataset.multipartUpload === "true"
-    this.directUpload = new DirectUpload(this.file, this.url, this, {}, this.useMultipart)
+    const customHeaders = {}
+    const options = { useMultipart: this.useMultipart }
+    this.directUpload = new DirectUpload(this.file, this.url, this, customHeaders, options)
     this.dispatch("initialize")
   }
 
@@ -43,6 +44,10 @@ export class DirectUploadController {
     return this.input.getAttribute("data-direct-upload-url")
   }
 
+  get useMultipart() {
+    return this.input.getAttribute("data-multipart-upload") === "true"
+  }
+
   dispatch(name, detail = {}) {
     detail.file = this.file
     detail.id = this.directUpload.id
@@ -67,7 +72,9 @@ export class DirectUploadController {
     xhr.upload.addEventListener("progress", event => this.uploadRequestDidProgress(event))
 
     // Start simulating progress after upload completes
-    xhr.upload.addEventListener("loadend", () => this.simulateResponseProgress(xhr))
+    xhr.upload.addEventListener("loadend", () => {
+      this.simulateResponseProgress(xhr)
+    })
   }
 
   simulateResponseProgress(xhr) {
@@ -109,10 +116,5 @@ export class DirectUploadController {
     } else {
       return 3000 + (fileSize / MB * 50) // 3+ seconds for larger files
     }
-  }
-
-  // Multipart upload progress delegate method
-  directUploadDidProgress(event) {
-    this.uploadRequestDidProgress(event)
   }
 }

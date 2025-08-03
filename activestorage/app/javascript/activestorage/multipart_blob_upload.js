@@ -1,31 +1,34 @@
+import { getMetaValue } from "./helpers"
+import { RobustRequest } from "./robust_request"
+
 export class MultipartBlobUpload {
   constructor(blobRecord) {
     this.file = blobRecord.file
     this.blobId = blobRecord.attributes.id
-    const { upload_id, part_size, part_urls } = blobRecord.directUploadData
 
+    const { upload_id, part_size, part_urls } = blobRecord.directUploadData
     this.uploadId = upload_id
     this.partSize = part_size
     this.partUrls = part_urls
+
     this.uploadedParts = []
     this.maxConcurrentUploads = 4
-    this.progressThrottleMs = 100
-    this.retryableRequest = new RetryableRequest()
+    this.progressInterval = 100
+    this.robustRequest = new RobustRequest()
     this.partProgress = new Array(part_urls.length).fill(0)
+
+    // First aggregate progress of all parts, then used as complete-multipart request
     this.xhr = new XMLHttpRequest()
   }
 
   create(callback) {
     this.callback = callback
-    this.uploadPartsConcurrently()
+    this.uploadParts()
   }
 
-  uploadPartsConcurrently() {
+  uploadParts() {
     this.uploadPartsWithConcurrencyLimit(this.partUrls, this.maxConcurrentUploads)
-      .then(() => {
-        console.debug("All parts uploaded, completing multipart upload")
-        this.completeMultipartUpload()
-      })
+      .then(() => this.completeMultipartUpload())
       .catch(error => { this.callback(error) })
   }
 
@@ -72,14 +75,11 @@ export class MultipartBlobUpload {
       const end = Math.min(start + this.partSize, this.file.size)
       const chunk = this.file.slice(start, end)
 
-      console.debug(`Part ${partData.part_number}/${this.partUrls.length} starting`)
-
       this.uploadPart(partData.url, chunk, (error, etag) => {
         if (error) {
           reject(error)
         } else {
           this.uploadedParts.push({ etag: etag, part_number: partData.part_number })
-          console.debug(`Part ${partData.part_number}/${this.partUrls.length} uploaded`)
           resolve(etag)
         }
       }, partData.part_number)
@@ -87,32 +87,31 @@ export class MultipartBlobUpload {
   }
 
   uploadPart(url, chunk, callback, partNumber) {
-    this.retryableRequest.execute((onSuccess, onError) => {
-      const xhr = new XMLHttpRequest()
-      xhr.open("PUT", url, true)
-      xhr.responseType = "text"
+    this.robustRequest.execute((onSuccess, onError) => {
+      const partXhr = new XMLHttpRequest()
+      partXhr.open("PUT", url, true)
+      partXhr.responseType = "text"
 
-      xhr.upload.addEventListener("progress", (event) => {
+      partXhr.upload.addEventListener("progress", (event) => {
         if (event.lengthComputable) {
-          const partProgress = event.loaded
-          this.updatePartProgress(partNumber - 1, partProgress)
+          this.updatePartProgress(partNumber - 1, event.loaded)
         }
       })
 
-      xhr.addEventListener("load", () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
+      partXhr.addEventListener("load", () => {
+        if (partXhr.status >= 200 && partXhr.status < 300) {
           this.updatePartProgress(partNumber - 1, chunk.size)
-          onSuccess(xhr.getResponseHeader("ETag"))
+          onSuccess(partXhr.getResponseHeader("ETag"))
         } else {
           onError({
-            status: xhr.status,
-            message: `Failed to upload part: ${xhr.status}`,
+            status: partXhr.status,
+            message: `Failed to upload part: ${partXhr.status}`,
             context: "Part upload"
           })
         }
       })
 
-      xhr.addEventListener("error", () => {
+      partXhr.addEventListener("error", () => {
         onError({
           networkError: true,
           message: "Network error",
@@ -120,7 +119,7 @@ export class MultipartBlobUpload {
         })
       })
 
-      xhr.send(chunk)
+      partXhr.send(chunk)
     })
       .then(etag => callback(null, etag))
       .catch(error => callback(new Error(error.message)))
@@ -129,9 +128,7 @@ export class MultipartBlobUpload {
   updatePartProgress(partIndex, progress) {
     this.partProgress[partIndex] = progress
     if (this.emitProgressTimeoutId) { return }
-    this.emitProgressTimeoutId = setTimeout(() => {
-      this.emitProgressEvent()
-    }, this.progressThrottleMs)
+    this.emitProgressTimeoutId = setTimeout(() => this.emitProgressEvent(), this.progressInterval)
   }
 
   emitProgressEvent() {
@@ -146,83 +143,41 @@ export class MultipartBlobUpload {
   }
 
   completeMultipartUpload() {
-    // Sort parts by part_number to ensure correct order
     this.uploadedParts.sort((a, b) => a.part_number - b.part_number)
-
-    this.retryableRequest.execute((onSuccess, onError) => {
-      const xhr = new XMLHttpRequest()
+    this.robustRequest.execute((onSuccess, onError) => {
       const completeUrl = `/rails/active_storage/direct_uploads/${this.blobId}`
 
-      xhr.open("PUT", completeUrl, true)
-      xhr.setRequestHeader("Content-Type", "application/json")
-      xhr.setRequestHeader("X-CSRF-Token", this.getCSRFToken())
+      this.xhr.open("PUT", completeUrl, true)
+      this.xhr.setRequestHeader("Content-Type", "application/json")
 
-      xhr.addEventListener("load", () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
+      const csrfToken = getMetaValue("csrf-token")
+      if (csrfToken != undefined) {
+        this.xhr.setRequestHeader("X-CSRF-Token", csrfToken)
+      }
+
+      this.xhr.addEventListener("load", () => {
+        if (this.xhr.status >= 200 && this.xhr.status < 300) {
           onSuccess(this.file)
         } else {
           onError({
-            status: xhr.status,
-            message: "Failed to complete multipart upload",
+            status: this.xhr.status,
+            message: "Failed to upload",
             context: "Complete multipart upload"
           })
         }
       })
 
-      xhr.addEventListener("error", () => {
+      this.xhr.addEventListener("error", () => {
         onError({
           networkError: true,
-          message: "Network error completing multipart upload",
+          message: "Network error",
           context: "Complete multipart upload"
         })
       })
 
-      xhr.send(JSON.stringify({
-        blob: {
-          upload_id: this.uploadId,
-          parts: this.uploadedParts
-        }
-      }))
+      this.xhr.send(JSON.stringify({ blob: { upload_id: this.uploadId, parts: this.uploadedParts } }))
     })
       .then(file => this.callback(null, file))
       .catch(error => this.callback(new Error(error.message)))
   }
-
-  // TODO: See if we can reuse something else that also needs the CSRF token
-  getCSRFToken() {
-    const meta = document.querySelector("meta[name=\"csrf-token\"]")
-    return meta ? meta.content : ""
-  }
 }
-
-class RetryableRequest {
-  constructor(options = {}) {
-    this.maxRetries = options.maxRetries || 5
-    this.baseDelay = options.baseDelay || 2000
-    this.isRetryableStatus = options.isRetryableStatus || ((status) => status >= 500 || status === 408 || status === 429)
-  }
-
-  execute(requestFn, attempt = 0) {
-    return new Promise((resolve, reject) => {
-      const onSuccess = (result) => resolve(result)
-      const onError = (error) => {
-        if (attempt < this.maxRetries && this.shouldRetry(error)) {
-          const delay = Math.round(this.baseDelay * Math.pow(2, attempt) + Math.random() * 1000)
-          console.error(`${error.context || "Request"} failed, retrying in ${delay}ms (attempt ${attempt + 1}/${this.maxRetries}): ${error.message}`)
-          setTimeout(() => {
-            this.execute(requestFn, attempt + 1).then(resolve, reject)
-          }, delay)
-        } else {
-          reject(error)
-        }
-      }
-
-      requestFn(onSuccess, onError)
-    })
-  }
-
-  shouldRetry(error) {
-    return error.networkError || (error.status && this.isRetryableStatus(error.status))
-  }
-}
-
