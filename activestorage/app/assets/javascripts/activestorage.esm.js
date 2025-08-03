@@ -548,7 +548,6 @@ class BlobRecord {
     }
   }
   create(callback) {
-    console.debug("BlobRecord#create (sending to the server)");
     this.callback = callback;
     this.xhr.send(JSON.stringify({
       blob: this.attributes
@@ -557,7 +556,6 @@ class BlobRecord {
   requestDidLoad(event) {
     if (this.status >= 200 && this.status < 300) {
       const {response: response} = this;
-      console.debug("BlobRecord response:", response);
       const {direct_upload: direct_upload} = response;
       delete response.direct_upload;
       this.attributes = response;
@@ -580,9 +578,10 @@ class BlobRecord {
 }
 
 class BlobUpload {
-  constructor(blobRecord) {
-    this.file = blobRecord.file;
-    const {url: url, headers: headers} = blobRecord.directUploadData;
+  constructor(blob) {
+    this.blob = blob;
+    this.file = blob.file;
+    const {url: url, headers: headers} = blob.directUploadData;
     this.xhr = new XMLHttpRequest;
     this.xhr.open("PUT", url, true);
     this.xhr.responseType = "text";
@@ -593,7 +592,6 @@ class BlobUpload {
     this.xhr.addEventListener("error", (event => this.requestDidError(event)));
   }
   create(callback) {
-    console.debug("BlobUpload#create (uploading to S3)");
     this.callback = callback;
     this.xhr.send(this.file.slice());
   }
@@ -606,8 +604,32 @@ class BlobUpload {
     }
   }
   requestDidError(event) {
-    console.error("BlobUpload#requestDidError", event);
     this.callback(`Error storing "${this.file.name}". Status: ${this.xhr.status}`);
+  }
+}
+
+class RobustRequest {
+  constructor(options = {}) {
+    this.maxRetries = options.maxRetries || 5;
+    this.baseDelay = options.baseDelay || 2e3;
+    this.isRetryableStatus = options.isRetryableStatus || (status => status >= 500 || status === 408 || status === 429);
+  }
+  execute(requestCallback, attempt = 0) {
+    return new Promise(((resolve, reject) => {
+      const onSuccess = result => resolve(result);
+      const onError = error => {
+        if (attempt < this.maxRetries && this.shouldRetry(error)) {
+          const delay = Math.round(this.baseDelay * Math.pow(2, attempt) + Math.random() * 1e3);
+          setTimeout((() => this.execute(requestCallback, attempt + 1).then(resolve, reject)), delay);
+        } else {
+          reject(error);
+        }
+      };
+      requestCallback(onSuccess, onError);
+    }));
+  }
+  shouldRetry(error) {
+    return error.networkError || error.status && this.isRetryableStatus(error.status);
   }
 }
 
@@ -621,20 +643,17 @@ class MultipartBlobUpload {
     this.partUrls = part_urls;
     this.uploadedParts = [];
     this.maxConcurrentUploads = 4;
-    this.progressThrottleMs = 100;
-    this.retryableRequest = new RetryableRequest;
+    this.progressInterval = 100;
+    this.robustRequest = new RobustRequest;
     this.partProgress = new Array(part_urls.length).fill(0);
     this.xhr = new XMLHttpRequest;
   }
   create(callback) {
     this.callback = callback;
-    this.uploadPartsConcurrently();
+    this.uploadParts();
   }
-  uploadPartsConcurrently() {
-    this.uploadPartsWithConcurrencyLimit(this.partUrls, this.maxConcurrentUploads).then((() => {
-      console.debug("All parts uploaded, completing multipart upload");
-      this.completeMultipartUpload();
-    })).catch((error => {
+  uploadParts() {
+    this.uploadPartsWithConcurrencyLimit(this.partUrls, this.maxConcurrentUploads).then((() => this.completeMultipartUpload())).catch((error => {
       this.callback(error);
     }));
   }
@@ -670,7 +689,6 @@ class MultipartBlobUpload {
       const start = (partData.part_number - 1) * this.partSize;
       const end = Math.min(start + this.partSize, this.file.size);
       const chunk = this.file.slice(start, end);
-      console.debug(`Part ${partData.part_number}/${this.partUrls.length} starting`);
       this.uploadPart(partData.url, chunk, ((error, etag) => {
         if (error) {
           reject(error);
@@ -679,43 +697,41 @@ class MultipartBlobUpload {
             etag: etag,
             part_number: partData.part_number
           });
-          console.debug(`Part ${partData.part_number}/${this.partUrls.length} uploaded`);
           resolve(etag);
         }
       }), partData.part_number);
     }));
   }
   uploadPart(url, chunk, callback, partNumber) {
-    this.retryableRequest.execute(((onSuccess, onError) => {
-      const xhr = new XMLHttpRequest;
-      xhr.open("PUT", url, true);
-      xhr.responseType = "text";
-      xhr.upload.addEventListener("progress", (event => {
+    this.robustRequest.execute(((onSuccess, onError) => {
+      const partXhr = new XMLHttpRequest;
+      partXhr.open("PUT", url, true);
+      partXhr.responseType = "text";
+      partXhr.upload.addEventListener("progress", (event => {
         if (event.lengthComputable) {
-          const partProgress = event.loaded;
-          this.updatePartProgress(partNumber - 1, partProgress);
+          this.updatePartProgress(partNumber - 1, event.loaded);
         }
       }));
-      xhr.addEventListener("load", (() => {
-        if (xhr.status >= 200 && xhr.status < 300) {
+      partXhr.addEventListener("load", (() => {
+        if (partXhr.status >= 200 && partXhr.status < 300) {
           this.updatePartProgress(partNumber - 1, chunk.size);
-          onSuccess(xhr.getResponseHeader("ETag"));
+          onSuccess(partXhr.getResponseHeader("ETag"));
         } else {
           onError({
-            status: xhr.status,
-            message: `Failed to upload part: ${xhr.status}`,
+            status: partXhr.status,
+            message: `Failed to upload part: ${partXhr.status}`,
             context: "Part upload"
           });
         }
       }));
-      xhr.addEventListener("error", (() => {
+      partXhr.addEventListener("error", (() => {
         onError({
           networkError: true,
           message: "Network error",
           context: "Part upload"
         });
       }));
-      xhr.send(chunk);
+      partXhr.send(chunk);
     })).then((etag => callback(null, etag))).catch((error => callback(new Error(error.message))));
   }
   updatePartProgress(partIndex, progress) {
@@ -723,9 +739,7 @@ class MultipartBlobUpload {
     if (this.emitProgressTimeoutId) {
       return;
     }
-    this.emitProgressTimeoutId = setTimeout((() => {
-      this.emitProgressEvent();
-    }), this.progressThrottleMs);
+    this.emitProgressTimeoutId = setTimeout((() => this.emitProgressEvent()), this.progressInterval);
   }
   emitProgressEvent() {
     this.emitProgressTimeoutId = null;
@@ -739,31 +753,33 @@ class MultipartBlobUpload {
   }
   completeMultipartUpload() {
     this.uploadedParts.sort(((a, b) => a.part_number - b.part_number));
-    this.retryableRequest.execute(((onSuccess, onError) => {
-      const xhr = new XMLHttpRequest;
+    this.robustRequest.execute(((onSuccess, onError) => {
       const completeUrl = `/rails/active_storage/direct_uploads/${this.blobId}`;
-      xhr.open("PUT", completeUrl, true);
-      xhr.setRequestHeader("Content-Type", "application/json");
-      xhr.setRequestHeader("X-CSRF-Token", this.getCSRFToken());
-      xhr.addEventListener("load", (() => {
-        if (xhr.status >= 200 && xhr.status < 300) {
+      this.xhr.open("PUT", completeUrl, true);
+      this.xhr.setRequestHeader("Content-Type", "application/json");
+      const csrfToken = getMetaValue("csrf-token");
+      if (csrfToken != undefined) {
+        this.xhr.setRequestHeader("X-CSRF-Token", csrfToken);
+      }
+      this.xhr.addEventListener("load", (() => {
+        if (this.xhr.status >= 200 && this.xhr.status < 300) {
           onSuccess(this.file);
         } else {
           onError({
-            status: xhr.status,
-            message: "Failed to complete multipart upload",
+            status: this.xhr.status,
+            message: "Failed to upload",
             context: "Complete multipart upload"
           });
         }
       }));
-      xhr.addEventListener("error", (() => {
+      this.xhr.addEventListener("error", (() => {
         onError({
           networkError: true,
-          message: "Network error completing multipart upload",
+          message: "Network error",
           context: "Complete multipart upload"
         });
       }));
-      xhr.send(JSON.stringify({
+      this.xhr.send(JSON.stringify({
         blob: {
           upload_id: this.uploadId,
           parts: this.uploadedParts
@@ -771,57 +787,25 @@ class MultipartBlobUpload {
       }));
     })).then((file => this.callback(null, file))).catch((error => this.callback(new Error(error.message))));
   }
-  getCSRFToken() {
-    const meta = document.querySelector('meta[name="csrf-token"]');
-    return meta ? meta.content : "";
-  }
-}
-
-class RetryableRequest {
-  constructor(options = {}) {
-    this.maxRetries = options.maxRetries || 5;
-    this.baseDelay = options.baseDelay || 2e3;
-    this.isRetryableStatus = options.isRetryableStatus || (status => status >= 500 || status === 408 || status === 429);
-  }
-  execute(requestFn, attempt = 0) {
-    return new Promise(((resolve, reject) => {
-      const onSuccess = result => resolve(result);
-      const onError = error => {
-        if (attempt < this.maxRetries && this.shouldRetry(error)) {
-          const delay = Math.round(this.baseDelay * Math.pow(2, attempt) + Math.random() * 1e3);
-          console.error(`${error.context || "Request"} failed, retrying in ${delay}ms (attempt ${attempt + 1}/${this.maxRetries}): ${error.message}`);
-          setTimeout((() => {
-            this.execute(requestFn, attempt + 1).then(resolve, reject);
-          }), delay);
-        } else {
-          reject(error);
-        }
-      };
-      requestFn(onSuccess, onError);
-    }));
-  }
-  shouldRetry(error) {
-    return error.networkError || error.status && this.isRetryableStatus(error.status);
-  }
 }
 
 let id = 0;
 
 class DirectUpload {
-  constructor(file, url, delegate, customHeaders = {}, useMultipart = false) {
+  constructor(file, url, delegate, customHeaders = {}, options = {}) {
     this.id = ++id;
     this.file = file;
     this.url = url;
     this.delegate = delegate;
     this.customHeaders = customHeaders;
-    this.useMultipart = useMultipart;
+    this.useMultipart = !!options.useMultipart;
   }
   create(callback) {
     this.maybeGetChecksum(((error, checksum) => {
       if (error) return callback(error);
       this.createBlobRecord(checksum, ((error, blobRecord) => {
         if (error) return callback(error);
-        this.uploadToService(blobRecord, callback);
+        this.createBlobUpload(blobRecord, callback);
       }));
     }));
   }
@@ -833,11 +817,11 @@ class DirectUpload {
     }
   }
   createBlobRecord(checksum, callback) {
-    const blobRecord = new BlobRecord(this.file, checksum, this.url, this.customHeaders);
+    const blobRecord = new BlobRecord(this.file, checksum, this.url);
     notify(this.delegate, "directUploadWillCreateBlobWithXHR", blobRecord.xhr);
     blobRecord.create((error => callback(error, blobRecord)));
   }
-  uploadToService(blobRecord, callback) {
+  createBlobUpload(blobRecord, callback) {
     const UploadClass = this.useMultipart ? MultipartBlobUpload : BlobUpload;
     const upload = new UploadClass(blobRecord);
     notify(this.delegate, "directUploadWillStoreFileWithXHR", upload.xhr);
@@ -861,8 +845,11 @@ class DirectUploadController {
   constructor(input, file) {
     this.input = input;
     this.file = file;
-    this.useMultipart = this.input.dataset.multipartUpload === "true";
-    this.directUpload = new DirectUpload(this.file, this.url, this, {}, this.useMultipart);
+    const customHeaders = {};
+    const options = {
+      useMultipart: this.useMultipart
+    };
+    this.directUpload = new DirectUpload(this.file, this.url, this, customHeaders, options);
     this.dispatch("initialize");
   }
   start(callback) {
@@ -893,6 +880,9 @@ class DirectUploadController {
   get url() {
     return this.input.getAttribute("data-direct-upload-url");
   }
+  get useMultipart() {
+    return this.input.getAttribute("data-multipart-upload") === "true";
+  }
   dispatch(name, detail = {}) {
     detail.file = this.file;
     detail.id = this.directUpload.id;
@@ -918,7 +908,9 @@ class DirectUploadController {
       xhr: xhr
     });
     xhr.upload.addEventListener("progress", (event => this.uploadRequestDidProgress(event)));
-    xhr.upload.addEventListener("loadend", (() => this.simulateResponseProgress(xhr)));
+    xhr.upload.addEventListener("loadend", (() => {
+      this.simulateResponseProgress(xhr);
+    }));
   }
   simulateResponseProgress(xhr) {
     let progress = 90;
@@ -952,9 +944,6 @@ class DirectUploadController {
     } else {
       return 3e3 + fileSize / MB * 50;
     }
-  }
-  directUploadDidProgress(event) {
-    this.uploadRequestDidProgress(event);
   }
 }
 
