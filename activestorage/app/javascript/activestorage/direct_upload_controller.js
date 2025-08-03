@@ -6,7 +6,11 @@ export class DirectUploadController {
     this.input = input
     this.file = file
     const customHeaders = {}
-    const options = { useMultipart: this.useMultipart }
+    const options = {
+      keyPrefix: this.keyPrefix,
+      keepFilename: this.keepFilename,
+      useMultipart: this.useMultipart
+    }
     this.directUpload = new DirectUpload(this.file, this.url, this, customHeaders, options)
     this.dispatch("initialize")
   }
@@ -43,8 +47,16 @@ export class DirectUploadController {
     return this.input.getAttribute("data-direct-upload-url")
   }
 
+  get keyPrefix() {
+    return this.input.getAttribute("data-key-prefix")
+  }
+
+  get keepFilename() {
+    return this.input.getAttribute("data-keep-filename") === "true"
+  }
+
   get useMultipart() {
-    return this.input.getAttribute("data-multipart-upload") === "true"
+    return this.input.getAttribute("data-use-multipart") === "true"
   }
 
   dispatch(name, detail = {}) {
