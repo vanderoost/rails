@@ -39,7 +39,7 @@ export class DirectUploadController {
   uploadRequestDidProgress(event) {
     // Scale upload progress to 0-90% range
     const progress = (event.loaded / event.total) * 90
-    if (progress) {
+    if (progress && !this.simulating) {
       this.dispatch("progress", { progress })
     }
   }
@@ -84,8 +84,12 @@ export class DirectUploadController {
     xhr.upload.addEventListener("progress", event => this.uploadRequestDidProgress(event))
 
     // Start simulating progress after upload completes
+    this.simulating = false
     xhr.upload.addEventListener("loadend", () => {
-      this.simulateResponseProgress(xhr)
+      if (!this.simulating) {
+        this.simulateResponseProgress(xhr)
+        this.simulating = true
+      }
     })
   }
 
@@ -103,14 +107,16 @@ export class DirectUploadController {
       this.dispatch("progress", { progress })
 
       // Continue until response arrives or we hit 99%
-      if (xhr.readyState !== XMLHttpRequest.DONE && progress < 99) {
+      if (progress < 99) {
         requestAnimationFrame(updateProgress)
       }
     }
 
     // Stop simulation when response arrives
     xhr.addEventListener("loadend", () => {
-      this.dispatch("progress", { progress: 100 })
+      if (xhr.status === 200) {
+        this.dispatch("progress", { progress: 100 })
+      }
     })
 
     requestAnimationFrame(updateProgress)
@@ -126,7 +132,7 @@ export class DirectUploadController {
     } else if (fileSize < 10 * MB) {
       return 2000 // 2 seconds for files 1-10MB
     } else {
-      return 3000 + (fileSize / MB * 50) // 3+ seconds for larger files
+      return 3000 + (fileSize / MB) // 3+ seconds for larger files
     }
   }
 }

@@ -11,8 +11,29 @@ class ActiveStorage::DirectUploadsController < ActiveStorage::BaseController
 
   def update
     blob = ActiveStorage::Blob.find(params[:id])
-    blob.service_complete_multipart_for_direct_upload(**complete_multipart_args)
-    head :ok
+
+    # Run small upload completions synchronously
+    # big = 5.gigabytes
+    big = 50.megabytes
+    if blob.byte_size < big
+      logger.debug "Small file, completing synchronously"
+      blob.service_complete_multipart_upload(**complete_multipart_args)
+      render json: { status: "complete" }, status: :ok
+
+    # Large upload completions are queued, and we can keep pinging this endpoint
+    else
+      if blob.multipart_completed?
+        logger.debug "Multipart completed!"
+        render json: { status: "complete" }, status: :ok
+      elsif blob.multipart_completion_pending?
+        logger.debug "Multipart completion pending"
+        render json: { status: "pending" }, status: :accepted
+      else
+        logger.debug "Starting a new multipart completion job"
+        blob.service_complete_multipart_upload_later(**complete_multipart_args)
+        render json: { status: "pending" }, status: :accepted
+      end
+    end
   end
 
   private
@@ -42,9 +63,7 @@ class ActiveStorage::DirectUploadsController < ActiveStorage::BaseController
     def multipart_direct_upload_json(blob)
       upload_id = blob.service_initiate_multipart_upload
       part_count = [(Math.sqrt(blob.byte_size / 1.megabyte) / 3).ceil, 1].max
-      logger.debug "Multipart with #{part_count} parts"
       part_size = blob.byte_size.fdiv(part_count).ceil
-      logger.debug "Parts of size #{part_size}"
 
       part_urls = (1..part_count).map do |part_number|
         {

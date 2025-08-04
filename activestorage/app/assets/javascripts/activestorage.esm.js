@@ -644,6 +644,8 @@ class MultipartBlobUpload {
     this.uploadedParts = [];
     this.maxConcurrentUploads = 4;
     this.progressInterval = 100;
+    this.retryTimeoutId = null;
+    this.retryInterval = 500;
     this.robustRequest = new RobustRequest;
     this.partProgress = new Array(part_urls.length).fill(0);
     this.xhr = new XMLHttpRequest;
@@ -753,39 +755,40 @@ class MultipartBlobUpload {
   }
   completeMultipartUpload() {
     this.uploadedParts.sort(((a, b) => a.part_number - b.part_number));
-    this.robustRequest.execute(((onSuccess, onError) => {
-      const completeUrl = `/rails/active_storage/direct_uploads/${this.blobId}`;
-      this.xhr.open("PUT", completeUrl, true);
-      this.xhr.setRequestHeader("Content-Type", "application/json");
-      const csrfToken = getMetaValue("csrf-token");
-      if (csrfToken != undefined) {
-        this.xhr.setRequestHeader("X-CSRF-Token", csrfToken);
+    const completeUrl = `/rails/active_storage/direct_uploads/${this.blobId}`;
+    this.xhr.open("PUT", completeUrl, true);
+    this.xhr.setRequestHeader("Content-Type", "application/json");
+    const csrfToken = getMetaValue("csrf-token");
+    if (csrfToken != undefined) {
+      this.xhr.setRequestHeader("X-CSRF-Token", csrfToken);
+    }
+    this.xhr.onload = () => {
+      if (this.xhr.status === 202) {
+        this.retryCompleteMultipartUpload();
+      } else if (this.xhr.status >= 200 && this.xhr.status < 300) {
+        this.callback(null, this.file);
+      } else {
+        this.requestDidError();
       }
-      this.xhr.addEventListener("load", (() => {
-        if (this.xhr.status >= 200 && this.xhr.status < 300) {
-          onSuccess(this.file);
-        } else {
-          onError({
-            status: this.xhr.status,
-            message: "Failed to upload",
-            context: "Complete multipart upload"
-          });
-        }
-      }));
-      this.xhr.addEventListener("error", (() => {
-        onError({
-          networkError: true,
-          message: "Network error",
-          context: "Complete multipart upload"
-        });
-      }));
-      this.xhr.send(JSON.stringify({
-        blob: {
-          upload_id: this.uploadId,
-          parts: this.uploadedParts
-        }
-      }));
-    })).then((file => this.callback(null, file))).catch((error => this.callback(new Error(error.message))));
+    };
+    this.xhr.onerror = e => {
+      this.callback(e);
+    };
+    this.xhr.send(JSON.stringify({
+      blob: {
+        upload_id: this.uploadId,
+        parts: this.uploadedParts
+      }
+    }));
+  }
+  requestDidError() {
+    this.callback(`Error storing "${this.file.name}". Status: ${this.xhr.status}`);
+  }
+  retryCompleteMultipartUpload() {
+    clearTimeout(this.retryTimeoutId);
+    const jitter = Math.round(Math.random() * 300);
+    this.retryTimeoutId = setTimeout((() => this.completeMultipartUpload()), this.retryInterval + jitter);
+    this.retryInterval = Math.min(Math.round(this.retryInterval * 1.5), 3e3);
   }
 }
 
@@ -877,7 +880,7 @@ class DirectUploadController {
   }
   uploadRequestDidProgress(event) {
     const progress = event.loaded / event.total * 90;
-    if (progress) {
+    if (progress && !this.simulating) {
       this.dispatch("progress", {
         progress: progress
       });
@@ -920,8 +923,12 @@ class DirectUploadController {
       xhr: xhr
     });
     xhr.upload.addEventListener("progress", (event => this.uploadRequestDidProgress(event)));
+    this.simulating = false;
     xhr.upload.addEventListener("loadend", (() => {
-      this.simulateResponseProgress(xhr);
+      if (!this.simulating) {
+        this.simulateResponseProgress(xhr);
+        this.simulating = true;
+      }
     }));
   }
   simulateResponseProgress(xhr) {
@@ -935,14 +942,16 @@ class DirectUploadController {
       this.dispatch("progress", {
         progress: progress
       });
-      if (xhr.readyState !== XMLHttpRequest.DONE && progress < 99) {
+      if (progress < 99) {
         requestAnimationFrame(updateProgress);
       }
     };
     xhr.addEventListener("loadend", (() => {
-      this.dispatch("progress", {
-        progress: 100
-      });
+      if (xhr.status === 200) {
+        this.dispatch("progress", {
+          progress: 100
+        });
+      }
     }));
     requestAnimationFrame(updateProgress);
   }
@@ -954,7 +963,7 @@ class DirectUploadController {
     } else if (fileSize < 10 * MB) {
       return 2e3;
     } else {
-      return 3e3 + fileSize / MB * 50;
+      return 3e3 + fileSize / MB;
     }
   }
 }
