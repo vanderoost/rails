@@ -65,7 +65,7 @@ class ActiveStorage::DirectUploadsController < ActiveStorage::BaseController
     IDEAL_PART_COUNT = 8
 
     def calculate_part_size(size)
-      count = Math.sqrt(size * MIN_PART_SIZE / IDEAL_PART_COUNT).floor
-      [size / count, MIN_PART_SIZE].max
+      count = Math.sqrt(size / MIN_PART_SIZE * IDEAL_PART_COUNT).floor
+      [size / [count, 1].max, MIN_PART_SIZE].max
     end
 end
