@@ -121,7 +121,7 @@ module ActiveStorage
       end
     end
 
-    def complete_multipart_for_direct_upload(key, upload_id:, parts:)
+    def complete_multipart_upload(key, upload_id:, parts:)
       instrument :complete_multipart, key: key do
         client.client.complete_multipart_upload(
           bucket: bucket.name,
