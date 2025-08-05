@@ -239,8 +239,8 @@ class ActiveStorage::Blob < ActiveStorage::Record
     service.part_url_for_direct_upload(key, upload_id: upload_id, part_number: part_number, expires_in: expires_in)
   end
 
-  def service_complete_multipart_for_direct_upload(upload_id:, parts:)
-    service.complete_multipart_for_direct_upload(key, upload_id: upload_id, parts: parts)
+  def service_complete_multipart_upload(upload_id:, parts:)
+    service.complete_multipart_upload(key, upload_id: upload_id, parts: parts)
   end
 
   # Uploads the +io+ to the service on the +key+ for this blob. Blobs are intended to be immutable, so you shouldn't be

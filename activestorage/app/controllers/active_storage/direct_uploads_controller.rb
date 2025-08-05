@@ -11,7 +11,7 @@ class ActiveStorage::DirectUploadsController < ActiveStorage::BaseController
 
   def update
     blob = ActiveStorage::Blob.find(params[:id])
-    blob.service_complete_multipart_for_direct_upload(**complete_multipart_args)
+    blob.service_complete_multipart_upload(**complete_multipart_args)
     head :ok
   end
 
@@ -41,10 +41,8 @@ class ActiveStorage::DirectUploadsController < ActiveStorage::BaseController
 
     def multipart_direct_upload_json(blob)
       upload_id = blob.service_initiate_multipart_upload
-      part_count = [(Math.sqrt(blob.byte_size / 1.megabyte) / 3).ceil, 1].max
-      logger.debug "Multipart with #{part_count} parts"
-      part_size = blob.byte_size.fdiv(part_count).ceil
-      logger.debug "Parts of size #{part_size}"
+      part_size = calculate_part_size(blob.byte_size)
+      part_count = blob.byte_size.fdiv(part_size).ceil
 
       part_urls = (1..part_count).map do |part_number|
         {
@@ -61,5 +59,13 @@ class ActiveStorage::DirectUploadsController < ActiveStorage::BaseController
         part_size: part_size,
         part_urls: part_urls
       })
+    end
+
+    MIN_PART_SIZE = 5.megabytes
+    IDEAL_PART_COUNT = 8
+
+    def calculate_part_size(size)
+      count = Math.sqrt(size * MIN_PART_SIZE / IDEAL_PART_COUNT).floor
+      [size / count, MIN_PART_SIZE].max
     end
 end
