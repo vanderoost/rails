@@ -267,5 +267,10 @@ export class MultipartBlobUpload {
         // Ignore errors
       }
     }
+
+    // Call callback with error so the queue knows this upload is done
+    if (this.callback) {
+      this.callback(new Error("Upload aborted"))
+    }
   }
 }

@@ -1077,6 +1077,9 @@ class BlobUpload {
         this.xhr.abort();
       } catch (error) {}
     }
+    if (this.callback) {
+      this.callback("Upload aborted");
+    }
   }
 }
 
@@ -1311,6 +1314,9 @@ class MultipartBlobUpload {
       try {
         this.xhr.abort();
       } catch (error) {}
+    }
+    if (this.callback) {
+      this.callback(new Error("Upload aborted"));
     }
   }
 }

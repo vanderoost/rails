@@ -56,5 +56,10 @@ export class BlobUpload {
         // Ignore errors - XHR might already be completed
       }
     }
+
+    // Call callback with error so the queue knows this upload is done
+    if (this.callback) {
+      this.callback("Upload aborted")
+    }
   }
 }

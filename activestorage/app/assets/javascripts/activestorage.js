@@ -1064,6 +1064,9 @@
           this.xhr.abort();
         } catch (error) {}
       }
+      if (this.callback) {
+        this.callback("Upload aborted");
+      }
     }
   }
   class RobustRequest {
@@ -1296,6 +1299,9 @@
         try {
           this.xhr.abort();
         } catch (error) {}
+      }
+      if (this.callback) {
+        this.callback(new Error("Upload aborted"));
       }
     }
   }
