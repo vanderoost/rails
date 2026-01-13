@@ -39,12 +39,22 @@ export class DirectUploadsController {
     return new Promise((resolve, reject) => {
       const results = []
       const executing = []
+      const errors = []
       let controllerIndex = 0
 
       const startNextUpload = () => {
         if (controllerIndex >= controllers.length) {
           if (executing.length === 0) {
-            resolve()
+            // All uploads processed - resolve even if some failed
+            // This allows the queue to complete and the form to handle
+            // errors gracefully instead of halting
+            if (errors.length > 0 && results.every(p => p.isRejected)) {
+              // All uploads failed - reject with first error
+              reject(errors[0])
+            } else {
+              // At least one succeeded or queue completed - resolve
+              resolve()
+            }
           }
           return
         }
@@ -58,11 +68,17 @@ export class DirectUploadsController {
         uploadPromise
           .then(() => {
             executing.splice(executing.indexOf(uploadPromise), 1)
+            uploadPromise.isResolved = true
             startNextUpload()
           })
           .catch(error => {
             executing.splice(executing.indexOf(uploadPromise), 1)
-            reject(error)
+            uploadPromise.isRejected = true
+            errors.push(error)
+            // Continue queue instead of rejecting immediately
+            // This allows aborted uploads to free up slots for queued
+            // uploads
+            startNextUpload()
           })
       }
 

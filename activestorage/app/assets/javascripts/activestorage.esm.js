@@ -1524,24 +1524,34 @@ class DirectUploadsController {
   }
   uploadControllersWithConcurrencyLimit(controllers, limit) {
     return new Promise(((resolve, reject) => {
+      const results = [];
       const executing = [];
+      const errors = [];
       let controllerIndex = 0;
       const startNextUpload = () => {
         if (controllerIndex >= controllers.length) {
           if (executing.length === 0) {
-            resolve();
+            if (errors.length > 0 && results.every((p => p.isRejected))) {
+              reject(errors[0]);
+            } else {
+              resolve();
+            }
           }
           return;
         }
         const controller = controllers[controllerIndex++];
         const uploadPromise = this.uploadControllerAsync(controller);
+        results.push(uploadPromise);
         executing.push(uploadPromise);
         uploadPromise.then((() => {
           executing.splice(executing.indexOf(uploadPromise), 1);
+          uploadPromise.isResolved = true;
           startNextUpload();
         })).catch((error => {
           executing.splice(executing.indexOf(uploadPromise), 1);
-          reject(error);
+          uploadPromise.isRejected = true;
+          errors.push(error);
+          startNextUpload();
         }));
       };
       for (let i = 0; i < Math.min(limit, controllers.length); i++) {
