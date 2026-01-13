@@ -13,14 +13,20 @@ export class BlobUpload {
     }
     this.xhr.addEventListener("load", event => this.requestDidLoad(event))
     this.xhr.addEventListener("error", event => this.requestDidError(event))
+
+    this.aborted = false
   }
 
   create(callback) {
     this.callback = callback
-    this.xhr.send(this.file.slice())
+    if (!this.aborted) {
+      this.xhr.send(this.file.slice())
+    }
   }
 
   requestDidLoad(event) {
+    if (this.aborted) return
+
     const { status, response } = this.xhr
     if (status >= 200 && status < 300) {
       this.callback(null, response)
@@ -30,6 +36,25 @@ export class BlobUpload {
   }
 
   requestDidError(event) {
-    this.callback(`Error storing "${this.file.name}". Status: ${this.xhr.status}`)
+    if (this.aborted) return
+
+    this.callback(
+      `Error storing "${this.file.name}". Status: ${this.xhr.status}`
+    )
+  }
+
+  abort() {
+    if (this.aborted) return
+
+    this.aborted = true
+
+    if (this.xhr && this.xhr.readyState !== XMLHttpRequest.DONE) {
+      try {
+        this.xhr.abort()
+      // eslint-disable-next-line no-unused-vars
+      } catch (error) {
+        // Ignore errors - XHR might already be completed
+      }
+    }
   }
 }

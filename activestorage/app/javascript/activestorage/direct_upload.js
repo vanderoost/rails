@@ -48,17 +48,25 @@ export class DirectUpload {
   }
 
   createBlobUpload(blobRecord, callback) {
-    const UploadClass = this.useMultipart ? MultipartBlobUpload : BlobUpload
-    const upload = new UploadClass(blobRecord)
+    const UploadClass =
+      this.useMultipart ? MultipartBlobUpload : BlobUpload
+    this.upload = new UploadClass(blobRecord)
 
-    notify(this.delegate, "directUploadWillStoreFileWithXHR", upload.xhr)
-    upload.create(error => {
+    notify(this.delegate, "directUploadWillStoreFileWithXHR",
+      this.upload.xhr)
+    this.upload.create(error => {
       if (error) {
         callback(error)
       } else {
         callback(null, blobRecord.toJSON())
       }
     })
+  }
+
+  abort() {
+    if (this.upload && typeof this.upload.abort === "function") {
+      this.upload.abort()
+    }
   }
 }
 

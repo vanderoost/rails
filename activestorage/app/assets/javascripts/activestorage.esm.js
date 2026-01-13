@@ -1048,12 +1048,16 @@ class BlobUpload {
     }
     this.xhr.addEventListener("load", (event => this.requestDidLoad(event)));
     this.xhr.addEventListener("error", (event => this.requestDidError(event)));
+    this.aborted = false;
   }
   create(callback) {
     this.callback = callback;
-    this.xhr.send(this.file.slice());
+    if (!this.aborted) {
+      this.xhr.send(this.file.slice());
+    }
   }
   requestDidLoad(event) {
+    if (this.aborted) return;
     const {status: status, response: response} = this.xhr;
     if (status >= 200 && status < 300) {
       this.callback(null, response);
@@ -1062,7 +1066,17 @@ class BlobUpload {
     }
   }
   requestDidError(event) {
+    if (this.aborted) return;
     this.callback(`Error storing "${this.file.name}". Status: ${this.xhr.status}`);
+  }
+  abort() {
+    if (this.aborted) return;
+    this.aborted = true;
+    if (this.xhr && this.xhr.readyState !== XMLHttpRequest.DONE) {
+      try {
+        this.xhr.abort();
+      } catch (error) {}
+    }
   }
 }
 
@@ -1105,6 +1119,8 @@ class MultipartBlobUpload {
     this.robustRequest = new RobustRequest;
     this.partProgress = new Array(part_urls.length).fill(0);
     this.xhr = new XMLHttpRequest;
+    this.activeXhrs = [];
+    this.aborted = false;
   }
   create(callback) {
     this.callback = callback;
@@ -1161,8 +1177,21 @@ class MultipartBlobUpload {
     }));
   }
   uploadPart(url, chunk, callback, partNumber) {
+    if (this.aborted) {
+      callback(new Error("Upload aborted"));
+      return;
+    }
     this.robustRequest.execute(((onSuccess, onError) => {
+      if (this.aborted) {
+        onError({
+          aborted: true,
+          message: "Upload aborted",
+          context: "Part upload"
+        });
+        return;
+      }
       const partXhr = new XMLHttpRequest;
+      this.activeXhrs.push(partXhr);
       partXhr.open("PUT", url, true);
       partXhr.responseType = "text";
       partXhr.upload.addEventListener("progress", (event => {
@@ -1171,6 +1200,8 @@ class MultipartBlobUpload {
         }
       }));
       partXhr.addEventListener("load", (() => {
+        const idx = this.activeXhrs.indexOf(partXhr);
+        if (idx > -1) this.activeXhrs.splice(idx, 1);
         if (partXhr.status >= 200 && partXhr.status < 300) {
           this.updatePartProgress(partNumber - 1, chunk.size);
           onSuccess(partXhr.getResponseHeader("ETag"));
@@ -1183,6 +1214,8 @@ class MultipartBlobUpload {
         }
       }));
       partXhr.addEventListener("error", (() => {
+        const idx = this.activeXhrs.indexOf(partXhr);
+        if (idx > -1) this.activeXhrs.splice(idx, 1);
         onError({
           networkError: true,
           message: "Network error",
@@ -1190,7 +1223,11 @@ class MultipartBlobUpload {
         });
       }));
       partXhr.send(chunk);
-    })).then((etag => callback(null, etag))).catch((error => callback(new Error(error.message))));
+    })).then((etag => {
+      if (!this.aborted) callback(null, etag);
+    })).catch((error => {
+      if (!this.aborted) callback(new Error(error.message));
+    }));
   }
   updatePartProgress(partIndex, progress) {
     this.partProgress[partIndex] = progress;
@@ -1210,8 +1247,20 @@ class MultipartBlobUpload {
     this.xhr.upload.dispatchEvent(progressEvent);
   }
   completeMultipartUpload() {
+    if (this.aborted) {
+      this.callback(new Error("Upload aborted"));
+      return;
+    }
     this.uploadedParts.sort(((a, b) => a.part_number - b.part_number));
     this.robustRequest.execute(((onSuccess, onError) => {
+      if (this.aborted) {
+        onError({
+          aborted: true,
+          message: "Upload aborted",
+          context: "Complete multipart upload"
+        });
+        return;
+      }
       const completeUrl = `/rails/active_storage/direct_uploads/${this.blobId}`;
       this.xhr.open("PUT", completeUrl, true);
       this.xhr.setRequestHeader("Content-Type", "application/json");
@@ -1243,7 +1292,26 @@ class MultipartBlobUpload {
           parts: this.uploadedParts
         }
       }));
-    })).then((file => this.callback(null, file))).catch((error => this.callback(new Error(error.message))));
+    })).then((file => {
+      if (!this.aborted) this.callback(null, file);
+    })).catch((error => {
+      if (!this.aborted) this.callback(new Error(error.message));
+    }));
+  }
+  abort() {
+    if (this.aborted) return;
+    this.aborted = true;
+    this.activeXhrs.forEach((xhr => {
+      try {
+        xhr.abort();
+      } catch (error) {}
+    }));
+    this.activeXhrs = [];
+    if (this.xhr && this.xhr.readyState !== XMLHttpRequest.DONE) {
+      try {
+        this.xhr.abort();
+      } catch (error) {}
+    }
   }
 }
 
@@ -1289,15 +1357,20 @@ class DirectUpload {
   }
   createBlobUpload(blobRecord, callback) {
     const UploadClass = this.useMultipart ? MultipartBlobUpload : BlobUpload;
-    const upload = new UploadClass(blobRecord);
-    notify(this.delegate, "directUploadWillStoreFileWithXHR", upload.xhr);
-    upload.create((error => {
+    this.upload = new UploadClass(blobRecord);
+    notify(this.delegate, "directUploadWillStoreFileWithXHR", this.upload.xhr);
+    this.upload.create((error => {
       if (error) {
         callback(error);
       } else {
         callback(null, blobRecord.toJSON());
       }
     }));
+  }
+  abort() {
+    if (this.upload && typeof this.upload.abort === "function") {
+      this.upload.abort();
+    }
   }
 }
 
